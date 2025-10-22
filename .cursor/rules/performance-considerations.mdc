@@ -1,7 +1,5 @@
 ---
-description: This rule provides guidance on performance optimization in NestJS applications, focusing on efficient resource usage and scalable design. It covers caching strategies, query optimization, and connection pooling to enhance responsiveness, as well as memory management techniques like streaming and object pooling to prevent leaks. It also highlights bundle size and lazy loading practices to reduce overhead and improve load times. Together, these recommendations ensure that applications remain performant, scalable, and resource-efficient.
-globs: *.ts
-alwaysApply: true
+alwaysApply: false
 ---
 - **Performance Considerations:**
   - *Optimization Techniques:*

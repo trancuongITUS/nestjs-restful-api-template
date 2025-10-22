@@ -1,7 +1,6 @@
 ---
 description: This rule defines recommended patterns and anti-patterns for NestJS development, focusing on proven architectural practices and common pitfalls to avoid. It encourages the use of design patterns such as dependency injection, repositories, unit of work, and CQRS for scalability and maintainability, while promoting DTOs, interceptors, pipes, and global exception filters as standard approaches. It also highlights critical anti-patterns like tight coupling, god classes, ignored errors, and hardcoded configuration, helping developers write clean, testable, and resilient code. Additionally, it provides guidance on state management and error handling to ensure consistency, reliability, and robustness across applications.
-globs: *.ts
-alwaysApply: true
+alwaysApply: false
 ---
 - **Common Patterns and Anti-patterns:**
   - **Design Patterns:**

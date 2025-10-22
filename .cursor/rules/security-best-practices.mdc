@@ -1,7 +1,6 @@
 ---
 description: This rule focuses on essential security best practices in NestJS, addressing common vulnerabilities such as SQL injection, XSS, CSRF, authentication flaws, and IDOR. It emphasizes robust input validation and sanitization using DTOs and validation pipes, ensuring that all user inputs and file uploads are properly validated and secured. By following these practices, developers can reduce attack surfaces, strengthen authentication and authorization, and build applications that are resilient against common security threats.
-globs: *.ts
-alwaysApply: true
+alwaysApply: false
 ---
 - **Security Best Practices:**
   - **Common Vulnerabilities:**
