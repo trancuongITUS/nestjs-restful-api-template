@@ -100,10 +100,14 @@ export class PostController {
     @Post()
     create(
         @Body('title', new TrimPipe({ removeExtraSpaces: true })) title: string,
-        @Body('content', new TrimPipe({ 
-            removeExtraSpaces: true, 
-            preserveNewlines: true 
-        })) content: string,
+        @Body(
+            'content',
+            new TrimPipe({
+                removeExtraSpaces: true,
+                preserveNewlines: true,
+            }),
+        )
+        content: string,
     ) {
         return this.postService.create({ title, content });
     }
@@ -148,7 +152,8 @@ export class ProductController {
         @Query('page', new DefaultValuePipe(1)) page: number,
         @Query('limit', new DefaultValuePipe(10)) limit: number,
         @Query('sortBy', new DefaultValuePipe('createdAt')) sortBy: string,
-        @Query('sortOrder', new DefaultValuePipe('desc')) sortOrder: 'asc' | 'desc',
+        @Query('sortOrder', new DefaultValuePipe('desc'))
+        sortOrder: 'asc' | 'desc',
     ) {
         return this.productService.findAll({ page, limit, sortBy, sortOrder });
     }
@@ -174,10 +179,14 @@ export class CommentController {
     @Post()
     create(
         @Body('content', SanitizePipe) content: string,
-        @Body('authorName', new SanitizePipe({ 
-            removeSpecialChars: true,
-            maxLength: 50 
-        })) authorName: string,
+        @Body(
+            'authorName',
+            new SanitizePipe({
+                removeSpecialChars: true,
+                maxLength: 50,
+            }),
+        )
+        authorName: string,
     ) {
         return this.commentService.create({ content, authorName });
     }
@@ -186,10 +195,14 @@ export class CommentController {
     @Put(':id')
     update(
         @Param('id', ParseUuidPipe) id: string,
-        @Body('content', new SanitizePipe({
-            allowedTags: ['b', 'i', 'em', 'strong'],
-            maxLength: 1000
-        })) content: string,
+        @Body(
+            'content',
+            new SanitizePipe({
+                allowedTags: ['b', 'i', 'em', 'strong'],
+                maxLength: 1000,
+            }),
+        )
+        content: string,
     ) {
         return this.commentService.update(id, { content });
     }
@@ -200,12 +213,12 @@ export class CommentController {
 
 ```typescript
 import { FileValidationPipe } from '../core/pipes';
-import { 
-    Controller, 
-    Post, 
-    UseInterceptors, 
-    UploadedFile, 
-    UploadedFiles 
+import {
+    Controller,
+    Post,
+    UseInterceptors,
+    UploadedFile,
+    UploadedFiles,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 
@@ -215,11 +228,14 @@ export class UploadController {
     @Post('avatar')
     @UseInterceptors(FileInterceptor('avatar'))
     uploadAvatar(
-        @UploadedFile(new FileValidationPipe({
-            maxSize: 2 * 1024 * 1024, // 2MB
-            allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
-            allowedExtensions: ['.jpg', '.jpeg', '.png', '.webp'],
-        })) file: Express.Multer.File,
+        @UploadedFile(
+            new FileValidationPipe({
+                maxSize: 2 * 1024 * 1024, // 2MB
+                allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+                allowedExtensions: ['.jpg', '.jpeg', '.png', '.webp'],
+            }),
+        )
+        file: Express.Multer.File,
     ) {
         return this.uploadService.saveAvatar(file);
     }
@@ -228,13 +244,16 @@ export class UploadController {
     @Post('documents')
     @UseInterceptors(FilesInterceptor('documents', 5))
     uploadDocuments(
-        @UploadedFiles(new FileValidationPipe({
-            maxSize: 10 * 1024 * 1024, // 10MB per file
-            maxFiles: 5,
-            allowedMimeTypes: ['application/pdf', 'application/msword'],
-            allowedExtensions: ['.pdf', '.doc', '.docx'],
-            requireExtension: true,
-        })) files: Express.Multer.File[],
+        @UploadedFiles(
+            new FileValidationPipe({
+                maxSize: 10 * 1024 * 1024, // 10MB per file
+                maxFiles: 5,
+                allowedMimeTypes: ['application/pdf', 'application/msword'],
+                allowedExtensions: ['.pdf', '.doc', '.docx'],
+                requireExtension: true,
+            }),
+        )
+        files: Express.Multer.File[],
     ) {
         return this.uploadService.saveDocuments(files);
     }
@@ -250,9 +269,14 @@ You can chain multiple pipes together:
 export class ApiController {
     @Get('search')
     search(
-        @Query('q', TrimPipe, LowerCasePipe, new SanitizePipe({ maxLength: 100 })) 
+        @Query(
+            'q',
+            TrimPipe,
+            LowerCasePipe,
+            new SanitizePipe({ maxLength: 100 }),
+        )
         query: string,
-        @Query('page', new DefaultValuePipe(1), ParseIntPipe) 
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe)
         page: number,
     ) {
         return this.searchService.search(query, page);

@@ -7,20 +7,24 @@ I have successfully implemented a comprehensive set of common middlewares for yo
 ## 📦 Implemented Middlewares
 
 ### 🔒 Security Middlewares
+
 1. **SecurityMiddleware** - Helmet.js integration for security headers
 2. **CorsMiddleware** - Cross-Origin Resource Sharing with environment-based configuration
 3. **Rate Limiting** - Three-tier rate limiting using `@nestjs/throttler`
 
 ### 📊 Performance Middlewares
+
 1. **CompressionMiddleware** - Gzip compression for responses >1KB
 2. **TimeoutInterceptor** - 30-second request timeout protection
 3. **Request Size Limiting** - Configurable payload size limits
 
 ### 📝 Logging & Monitoring
+
 1. **LoggingInterceptor** - Comprehensive request/response logging
 2. **RequestContextMiddleware** - Request ID generation and context tracking
 
 ### ✅ Validation & Error Handling
+
 1. **ValidationPipe** - Enhanced DTO validation with detailed error messages
 2. **HttpExceptionFilter** - Global exception handling with structured responses
 3. **TransformInterceptor** - Consistent API response format
@@ -56,6 +60,7 @@ src/
 ## 🚀 Features & Benefits
 
 ### Security Features
+
 - **Content Security Policy (CSP)** - Prevents XSS attacks
 - **HTTP Strict Transport Security (HSTS)** - Forces HTTPS
 - **X-Frame-Options** - Prevents clickjacking
@@ -63,12 +68,14 @@ src/
 - **CORS Protection** - Environment-based origin allowlists
 
 ### Performance Features
+
 - **Compression** - 60-80% response size reduction
 - **Request Timeout** - Prevents resource exhaustion
 - **Request Size Limits** - Configurable payload protection
 - **Efficient Logging** - Structured logging with correlation IDs
 
 ### Developer Experience
+
 - **Consistent API Responses** - Standardized success/error format
 - **Detailed Validation Errors** - Clear, actionable error messages
 - **Request Tracking** - Unique request IDs for debugging
@@ -77,45 +84,48 @@ src/
 ## 📋 API Response Format
 
 ### Success Response
+
 ```json
 {
-  "success": true,
-  "statusCode": 200,
-  "message": "Data retrieved successfully",
-  "data": { "id": 1, "name": "John Doe" },
-  "timestamp": "2024-01-01T00:00:00.000Z",
-  "path": "/api/v1/users/1"
+    "success": true,
+    "statusCode": 200,
+    "message": "Data retrieved successfully",
+    "data": { "id": 1, "name": "John Doe" },
+    "timestamp": "2024-01-01T00:00:00.000Z",
+    "path": "/api/v1/users/1"
 }
 ```
 
 ### Error Response
+
 ```json
 {
-  "success": false,
-  "statusCode": 400,
-  "message": "Validation failed",
-  "error": {
-    "code": "VALIDATION_FAILED",
-    "details": "Request validation failed",
-    "validationErrors": [
-      {
-        "field": "email",
-        "value": "invalid-email",
-        "constraints": {
-          "isEmail": "email must be an email"
-        }
-      }
-    ],
-    "requestId": "req_abc123_xyz789"
-  },
-  "timestamp": "2024-01-01T00:00:00.000Z",
-  "path": "/api/v1/users"
+    "success": false,
+    "statusCode": 400,
+    "message": "Validation failed",
+    "error": {
+        "code": "VALIDATION_FAILED",
+        "details": "Request validation failed",
+        "validationErrors": [
+            {
+                "field": "email",
+                "value": "invalid-email",
+                "constraints": {
+                    "isEmail": "email must be an email"
+                }
+            }
+        ],
+        "requestId": "req_abc123_xyz789"
+    },
+    "timestamp": "2024-01-01T00:00:00.000Z",
+    "path": "/api/v1/users"
 }
 ```
 
 ## 🔧 Configuration
 
 ### Environment Variables
+
 Create a `.env` file based on `env.example`:
 
 ```env
@@ -126,9 +136,11 @@ MAX_REQUEST_SIZE=10mb
 ```
 
 ### Rate Limiting Configuration
+
 Configured in `app.module.ts`:
+
 - **Short**: 10 requests per minute
-- **Medium**: 50 requests per 5 minutes  
+- **Medium**: 50 requests per 5 minutes
 - **Long**: 100 requests per 15 minutes
 
 ## 🧪 Testing Endpoints
@@ -144,60 +156,67 @@ The application includes test endpoints:
 
 ```json
 {
-  "dependencies": {
-    "helmet": "^7.x.x",
-    "compression": "^1.x.x",
-    "class-validator": "^0.x.x",
-    "class-transformer": "^0.x.x",
-    "@nestjs/throttler": "^5.x.x"
-  }
+    "dependencies": {
+        "helmet": "^7.x.x",
+        "compression": "^1.x.x",
+        "class-validator": "^0.x.x",
+        "class-transformer": "^0.x.x",
+        "@nestjs/throttler": "^5.x.x"
+    }
 }
 ```
 
 ## 🚀 Getting Started
 
 1. **Install Dependencies** (already done)
-   ```bash
-   npm install
-   ```
+
+    ```bash
+    npm install
+    ```
 
 2. **Set Environment Variables**
-   ```bash
-   cp env.example .env
-   # Edit .env with your configuration
-   ```
+
+    ```bash
+    cp env.example .env
+    # Edit .env with your configuration
+    ```
 
 3. **Start the Application**
-   ```bash
-   npm run start:dev
-   ```
+
+    ```bash
+    npm run start:dev
+    ```
 
 4. **Test the Middlewares**
-   ```bash
-   # Test basic endpoint
-   curl http://localhost:3000/api/v1/
 
-   # Test validation
-   curl -X POST http://localhost:3000/api/v1/test \
-     -H "Content-Type: application/json" \
-     -d '{"invalid": "data"}'
+    ```bash
+    # Test basic endpoint
+    curl http://localhost:3000/api/v1/
 
-   # Test error handling
-   curl http://localhost:3000/api/v1/error
-   ```
+    # Test validation
+    curl -X POST http://localhost:3000/api/v1/test \
+      -H "Content-Type: application/json" \
+      -d '{"invalid": "data"}'
+
+    # Test error handling
+    curl http://localhost:3000/api/v1/error
+    ```
 
 ## 🔍 Monitoring & Debugging
 
 ### Request Tracking
+
 Every request gets a unique ID in the `X-Request-ID` header for correlation across logs.
 
 ### Logging Output
+
 ```
 [Nest] INFO [LoggingInterceptor] Incoming Request: GET /api/v1/health
 [Nest] INFO [LoggingInterceptor] Outgoing Response: GET /api/v1/health - 200 [15ms]
 ```
 
 ### Error Logging
+
 ```
 [Nest] ERROR [HttpExceptionFilter] POST /api/v1/test - 400
 [Nest] ERROR [HttpExceptionFilter] Validation failed: email must be an email
@@ -206,21 +225,26 @@ Every request gets a unique ID in the `X-Request-ID` header for correlation acro
 ## 🛠️ Customization
 
 ### Adjust Rate Limits
+
 Modify values in `src/app.module.ts`:
+
 ```typescript
 ThrottlerModule.forRoot([
-  { name: 'short', ttl: 60000, limit: 20 }, // Increase to 20 req/min
-])
+    { name: 'short', ttl: 60000, limit: 20 }, // Increase to 20 req/min
+]);
 ```
 
 ### Custom CORS Origins
+
 Update `src/core/middlewares/cors.middleware.ts`:
+
 ```typescript
 case 'production':
   return ['https://yourdomain.com', 'https://admin.yourdomain.com'];
 ```
 
 ### Security Headers
+
 Modify `src/core/middlewares/security.middleware.ts` for custom CSP rules.
 
 ## 🎯 Next Steps
@@ -238,6 +262,6 @@ Modify `src/core/middlewares/security.middleware.ts` for custom CSP rules.
 ✅ **Build successful**  
 ✅ **TypeScript errors resolved**  
 ✅ **Following NestJS best practices**  
-✅ **Production-ready configuration**  
+✅ **Production-ready configuration**
 
 Your NestJS application now has a robust foundation with enterprise-grade middlewares for security, performance, logging, and error handling!

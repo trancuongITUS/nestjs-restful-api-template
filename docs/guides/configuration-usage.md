@@ -38,7 +38,7 @@ export class YourService {
         const port = this.configService.app.port;
         const isDev = this.configService.app.isDevelopment;
         const dbUrl = this.configService.database.url;
-        
+
         // Environment-specific logic
         if (this.configService.isProduction()) {
             // Production-specific code
@@ -50,46 +50,56 @@ export class YourService {
 ## 🔧 Configuration Categories
 
 ### Application Configuration
+
 - **port**: Application port (default: 3000)
 - **apiPrefix**: API route prefix (default: "api/v1")
 - **environment**: Current environment (development/production/test)
 - **isDevelopment/isProduction/isTest**: Environment helpers
 
 ### Security Configuration
+
 - **allowedOrigins**: CORS allowed origins array
 - **maxRequestSize**: Maximum request body size
 
 ### Logging Configuration
+
 - **level**: Log level (error/warn/log/debug/verbose)
 
 ### Rate Limiting Configuration
+
 - **throttle**: General throttle settings
 - **short/medium/long**: Tiered rate limiting configurations
 
 ### Performance Configuration
+
 - **requestTimeout**: Request timeout in milliseconds
 - **cacheTtl**: Cache time-to-live in milliseconds
 
 ### Database Configuration
+
 - **url**: Database connection URL
 - **host/port/username/password/name**: Individual connection parameters
 - **ssl**: SSL connection flag
 
 ### JWT Configuration
+
 - **secret/refreshSecret**: JWT signing secrets
 - **expiresIn/refreshExpiresIn**: Token expiration times
 
 ### Redis Configuration
+
 - **host/port**: Redis connection details
 - **password**: Redis password (optional)
 - **db**: Redis database number
 
 ### Email Configuration
+
 - **host/port**: Email server details
 - **user/password**: SMTP credentials
 - **from**: Default sender address
 
 ### File Storage Configuration
+
 - **uploadDest**: File upload directory
 - **maxFileSize**: Maximum file size
 - **allowedFileTypes**: Allowed MIME types array
@@ -108,11 +118,11 @@ All environment variables are validated using Joi schemas with:
 
 ```typescript
 // Example validations
-NODE_ENV: Joi.string().valid('development', 'production', 'test')
-PORT: Joi.number().port().default(3000)
-JWT_SECRET: Joi.string().min(32).optional()
-DATABASE_URL: Joi.string().uri().optional()
-EMAIL_FROM: Joi.string().email().optional()
+NODE_ENV: Joi.string().valid('development', 'production', 'test');
+PORT: Joi.number().port().default(3000);
+JWT_SECRET: Joi.string().min(32).optional();
+DATABASE_URL: Joi.string().uri().optional();
+EMAIL_FROM: Joi.string().email().optional();
 ```
 
 ## 📝 Environment Files
@@ -127,6 +137,7 @@ The configuration system supports multiple environment files with priority:
 ### Example Environment Files
 
 #### Development (`.env`)
+
 ```env
 NODE_ENV=development
 PORT=3000
@@ -135,6 +146,7 @@ ALLOWED_ORIGINS=http://localhost:3000,http://localhost:4200
 ```
 
 #### Production (`.env.production`)
+
 ```env
 NODE_ENV=production
 PORT=3000
@@ -144,6 +156,7 @@ DATABASE_SSL=true
 ```
 
 #### Testing (`.env.test`)
+
 ```env
 NODE_ENV=test
 PORT=3001
@@ -177,10 +190,7 @@ const dbUrl = this.configService.get('database.url', 'default-url');
 const hasRedis = this.configService.isDefined('redis');
 
 // Validate required configuration
-this.configService.validateRequiredConfig([
-    'database.url',
-    'jwt.secret'
-]);
+this.configService.validateRequiredConfig(['database.url', 'jwt.secret']);
 
 // Get complete configuration (debugging)
 const allConfig = this.configService.getAllConfig();
@@ -210,11 +220,13 @@ this.configService.validateRequiredConfig(['database.url']);
 ### Adding New Configuration
 
 1. **Update validation schema** (`env.validation.ts`):
+
 ```typescript
-NEW_CONFIG: Joi.string().required().description('New configuration value')
+NEW_CONFIG: Joi.string().required().description('New configuration value');
 ```
 
 2. **Update configuration factory** (`configuration.ts`):
+
 ```typescript
 export interface NewConfig {
     value: string;
@@ -227,6 +239,7 @@ newConfig: {
 ```
 
 3. **Update service** (`config.service.ts`):
+
 ```typescript
 get newConfig(): NewConfig {
     return this.configService.get<NewConfig>('newConfig', { infer: true })!;
@@ -234,6 +247,7 @@ get newConfig(): NewConfig {
 ```
 
 4. **Update environment files**:
+
 ```env
 NEW_CONFIG=some-value
 ```
@@ -331,19 +345,19 @@ ENV PORT=3000
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: app-config
+    name: app-config
 data:
-  NODE_ENV: "production"
-  PORT: "3000"
-  API_PREFIX: "api/v1"
+    NODE_ENV: 'production'
+    PORT: '3000'
+    API_PREFIX: 'api/v1'
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: app-secrets
+    name: app-secrets
 data:
-  JWT_SECRET: <base64-encoded-secret>
-  DATABASE_URL: <base64-encoded-url>
+    JWT_SECRET: <base64-encoded-secret>
+    DATABASE_URL: <base64-encoded-url>
 ```
 
 ### Environment Variables Priority

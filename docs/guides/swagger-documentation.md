@@ -36,6 +36,7 @@ http://localhost:3000/api/docs
 ```
 
 The documentation includes:
+
 - All available endpoints
 - Request/response schemas
 - Authentication requirements
@@ -59,13 +60,13 @@ import {
 
 ### Core Decorators
 
-| Decorator | Purpose | Usage |
-|-----------|---------|-------|
-| `@ApiTags()` | Group endpoints by category | `@ApiTags('users')` |
-| `@ApiOperation()` | Describe endpoint operation | `@ApiOperation({ summary: 'Create user' })` |
-| `@ApiResponse()` | Document response schemas | `@ApiResponse({ status: 200, description: 'Success' })` |
-| `@ApiProperty()` | Document DTO properties | `@ApiProperty({ example: 'john@example.com' })` |
-| `@ApiBearerAuth()` | Mark endpoint as requiring JWT | `@ApiBearerAuth('JWT-auth')` |
+| Decorator          | Purpose                        | Usage                                                   |
+| ------------------ | ------------------------------ | ------------------------------------------------------- |
+| `@ApiTags()`       | Group endpoints by category    | `@ApiTags('users')`                                     |
+| `@ApiOperation()`  | Describe endpoint operation    | `@ApiOperation({ summary: 'Create user' })`             |
+| `@ApiResponse()`   | Document response schemas      | `@ApiResponse({ status: 200, description: 'Success' })` |
+| `@ApiProperty()`   | Document DTO properties        | `@ApiProperty({ example: 'john@example.com' })`         |
+| `@ApiBearerAuth()` | Mark endpoint as requiring JWT | `@ApiBearerAuth('JWT-auth')`                            |
 
 ## Controller Documentation
 
@@ -397,6 +398,7 @@ Document common error responses:
 ### 4. Complete Response Schemas
 
 Always document the complete response structure including:
+
 - Success/error status
 - Status codes
 - Messages
@@ -453,25 +455,40 @@ export class EmployeesController {
             properties: {
                 success: { type: 'boolean', example: true },
                 statusCode: { type: 'number', example: 201 },
-                message: { type: 'string', example: 'Employee created successfully' },
+                message: {
+                    type: 'string',
+                    example: 'Employee created successfully',
+                },
                 data: {
                     type: 'object',
                     properties: {
                         id: { type: 'string', example: 'emp_123' },
                         firstName: { type: 'string', example: 'John' },
                         lastName: { type: 'string', example: 'Doe' },
-                        email: { type: 'string', example: 'john.doe@company.com' },
+                        email: {
+                            type: 'string',
+                            example: 'john.doe@company.com',
+                        },
                         department: { type: 'string', example: 'Engineering' },
-                        position: { type: 'string', example: 'Software Developer' },
+                        position: {
+                            type: 'string',
+                            example: 'Software Developer',
+                        },
                         createdAt: { type: 'string', format: 'date-time' },
                     },
                 },
             },
         },
     })
-    @ApiResponse({ status: 400, description: 'Bad request - validation errors' })
+    @ApiResponse({
+        status: 400,
+        description: 'Bad request - validation errors',
+    })
     @ApiResponse({ status: 401, description: 'Unauthorized' })
-    @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+    @ApiResponse({
+        status: 403,
+        description: 'Forbidden - insufficient permissions',
+    })
     @ApiBearerAuth('JWT-auth')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN, UserRole.HR)
@@ -506,7 +523,15 @@ export class EmployeesController {
 ### Complete DTO Example
 
 ```typescript
-import { IsEmail, IsNotEmpty, IsString, IsOptional, IsEnum, MinLength, MaxLength } from 'class-validator';
+import {
+    IsEmail,
+    IsNotEmpty,
+    IsString,
+    IsOptional,
+    IsEnum,
+    MinLength,
+    MaxLength,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum Department {
@@ -584,52 +609,53 @@ export class CreateEmployeeDto {
 ### Common Issues
 
 1. **Swagger UI not loading**
-   - Check that the application is running
-   - Verify the URL: `http://localhost:3000/api/docs`
-   - Check console for JavaScript errors
+    - Check that the application is running
+    - Verify the URL: `http://localhost:3000/api/docs`
+    - Check console for JavaScript errors
 
 2. **DTOs not appearing in schemas**
-   - Ensure `@ApiProperty()` decorators are added
-   - Check that DTOs are properly imported and used in controllers
-   - Verify class-validator decorators are present
+    - Ensure `@ApiProperty()` decorators are added
+    - Check that DTOs are properly imported and used in controllers
+    - Verify class-validator decorators are present
 
 3. **Authentication not working**
-   - Ensure `@ApiBearerAuth('JWT-auth')` is added to protected endpoints
-   - Check that the JWT token is valid and not expired
-   - Verify the token is entered without "Bearer " prefix in Swagger UI
+    - Ensure `@ApiBearerAuth('JWT-auth')` is added to protected endpoints
+    - Check that the JWT token is valid and not expired
+    - Verify the token is entered without "Bearer " prefix in Swagger UI
 
 4. **Missing endpoints**
-   - Check that controllers are properly imported in modules
-   - Ensure `@Controller()` and HTTP method decorators are present
-   - Verify the endpoint is not marked as `@Public()` if expecting it to be protected
+    - Check that controllers are properly imported in modules
+    - Ensure `@Controller()` and HTTP method decorators are present
+    - Verify the endpoint is not marked as `@Public()` if expecting it to be protected
 
 ### Debugging Tips
 
 1. **Check Generated Schema**
-   - Visit `/api/docs-json` to see the raw OpenAPI JSON
-   - Validate the schema structure
+    - Visit `/api/docs-json` to see the raw OpenAPI JSON
+    - Validate the schema structure
 
 2. **Console Logs**
-   - Check browser console for JavaScript errors
-   - Check server logs for any startup errors
+    - Check browser console for JavaScript errors
+    - Check server logs for any startup errors
 
 3. **Validation**
-   - Test DTOs independently to ensure validation works
-   - Check that validation pipe is properly configured
+    - Test DTOs independently to ensure validation works
+    - Check that validation pipe is properly configured
 
 ## Conclusion
 
 Following this guide ensures consistent, comprehensive API documentation that:
+
 - Improves developer experience
 - Facilitates API testing
 - Provides clear contracts for frontend developers
 - Maintains documentation quality standards
 
 Remember to update documentation whenever you:
+
 - Add new endpoints
 - Modify existing endpoints
 - Change request/response structures
 - Update authentication requirements
 
 For questions or improvements to this guide, please refer to the team documentation standards or create an issue in the project repository.
-

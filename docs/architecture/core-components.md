@@ -25,40 +25,45 @@ src/core/
 ## 🛡️ Security Middlewares
 
 ### SecurityMiddleware
+
 - **Purpose**: Applies security headers using Helmet.js
-- **Features**: 
-  - Content Security Policy (CSP)
-  - HTTP Strict Transport Security (HSTS)
-  - X-Frame-Options, X-XSS-Protection
-  - DNS Prefetch Control
-  - Hide X-Powered-By header
+- **Features**:
+    - Content Security Policy (CSP)
+    - HTTP Strict Transport Security (HSTS)
+    - X-Frame-Options, X-XSS-Protection
+    - DNS Prefetch Control
+    - Hide X-Powered-By header
 
 ### CorsMiddleware
+
 - **Purpose**: Handles Cross-Origin Resource Sharing
 - **Features**:
-  - Environment-based origin allowlist
-  - Configurable headers and methods
-  - Preflight request handling
-  - Credentials support
+    - Environment-based origin allowlist
+    - Configurable headers and methods
+    - Preflight request handling
+    - Credentials support
 
 ### RateLimitMiddleware
+
 - **Purpose**: Prevents abuse and DDoS attacks
 - **Configuration**: Three-tier rate limiting
-  - Short: 10 requests/minute
-  - Medium: 50 requests/5 minutes  
-  - Long: 100 requests/15 minutes
+    - Short: 10 requests/minute
+    - Medium: 50 requests/5 minutes
+    - Long: 100 requests/15 minutes
 
 ## 📊 Performance Middlewares
 
 ### CompressionMiddleware
+
 - **Purpose**: Compresses response bodies to reduce bandwidth
 - **Features**:
-  - Configurable compression level
-  - MIME type filtering
-  - Threshold-based compression (>1KB)
-  - Memory optimization
+    - Configurable compression level
+    - MIME type filtering
+    - Threshold-based compression (>1KB)
+    - Memory optimization
 
 ### TimeoutInterceptor
+
 - **Purpose**: Prevents requests from running indefinitely
 - **Default**: 30-second timeout
 - **Error**: Returns structured timeout error
@@ -66,49 +71,54 @@ src/core/
 ## 📝 Logging & Monitoring
 
 ### LoggingInterceptor
+
 - **Purpose**: Comprehensive request/response logging
 - **Features**:
-  - Request timing
-  - Response size tracking
-  - Error logging with stack traces
-  - Request ID correlation
+    - Request timing
+    - Response size tracking
+    - Error logging with stack traces
+    - Request ID correlation
 
 ### RequestContextMiddleware
+
 - **Purpose**: Adds metadata to requests
 - **Features**:
-  - Request ID generation
-  - Security headers
-  - Performance timing
-  - Request tracking
+    - Request ID generation
+    - Security headers
+    - Performance timing
+    - Request tracking
 
 ## ✅ Validation & Transformation
 
 ### ValidationPipe
+
 - **Purpose**: Enhanced request validation
 - **Features**:
-  - Nested validation support
-  - Detailed error messages
-  - Whitelist filtering
-  - Type transformation
+    - Nested validation support
+    - Detailed error messages
+    - Whitelist filtering
+    - Type transformation
 
 ### TransformInterceptor
+
 - **Purpose**: Standardizes response format
 - **Features**:
-  - Consistent API response structure
-  - Pagination metadata support
-  - Success message generation
-  - Error response formatting
+    - Consistent API response structure
+    - Pagination metadata support
+    - Success message generation
+    - Error response formatting
 
 ## 🚨 Error Handling
 
 ### HttpExceptionFilter
+
 - **Purpose**: Global exception handling
 - **Features**:
-  - Structured error responses
-  - Validation error formatting
-  - Request ID tracking
-  - Environment-aware error details
-  - Comprehensive error logging
+    - Structured error responses
+    - Validation error formatting
+    - Request ID tracking
+    - Environment-aware error details
+    - Comprehensive error logging
 
 ## 🔧 Configuration
 
@@ -133,41 +143,43 @@ The rate limiting is configured in `app.module.ts`:
 
 ```typescript
 ThrottlerModule.forRoot([
-  {
-    name: 'short',
-    ttl: 60000,    // 1 minute
-    limit: 10,     // 10 requests
-  },
-  {
-    name: 'medium', 
-    ttl: 300000,   // 5 minutes
-    limit: 50,     // 50 requests
-  },
-  {
-    name: 'long',
-    ttl: 900000,   // 15 minutes
-    limit: 100,    // 100 requests
-  },
-])
+    {
+        name: 'short',
+        ttl: 60000, // 1 minute
+        limit: 10, // 10 requests
+    },
+    {
+        name: 'medium',
+        ttl: 300000, // 5 minutes
+        limit: 50, // 50 requests
+    },
+    {
+        name: 'long',
+        ttl: 900000, // 15 minutes
+        limit: 100, // 100 requests
+    },
+]);
 ```
 
 ## 📚 Usage Examples
 
 ### Custom Rate Limiting
+
 ```typescript
 import { Throttle } from '@nestjs/throttler';
 
 @Controller('api')
 export class ApiController {
-  @Throttle({ short: { limit: 5, ttl: 60000 } })
-  @Post('upload')
-  uploadFile() {
-    // This endpoint has custom rate limiting
-  }
+    @Throttle({ short: { limit: 5, ttl: 60000 } })
+    @Post('upload')
+    uploadFile() {
+        // This endpoint has custom rate limiting
+    }
 }
 ```
 
 ### Skip Logging for Specific Routes
+
 ```typescript
 import { SetMetadata } from '@nestjs/common';
 
@@ -176,39 +188,41 @@ export const SkipLogging = () => SetMetadata(SKIP_LOGGING, true);
 
 @Controller('health')
 export class HealthController {
-  @Get()
-  @SkipLogging()
-  check() {
-    return { status: 'ok' };
-  }
+    @Get()
+    @SkipLogging()
+    check() {
+        return { status: 'ok' };
+    }
 }
 ```
 
 ### Custom Validation DTO
+
 ```typescript
 import { IsString, IsEmail, IsOptional, Length } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CreateUserDto {
-  @IsString()
-  @Length(2, 50)
-  @Transform(({ value }) => value.trim())
-  name: string;
+    @IsString()
+    @Length(2, 50)
+    @Transform(({ value }) => value.trim())
+    name: string;
 
-  @IsEmail()
-  @Transform(({ value }) => value.toLowerCase())
-  email: string;
+    @IsEmail()
+    @Transform(({ value }) => value.toLowerCase())
+    email: string;
 
-  @IsOptional()
-  @IsString()
-  @Length(10, 15)
-  phone?: string;
+    @IsOptional()
+    @IsString()
+    @Length(10, 15)
+    phone?: string;
 }
 ```
 
 ## 🔍 API Response Format
 
 ### Success Response
+
 ```json
 {
   "success": true,
@@ -221,27 +235,28 @@ export class CreateUserDto {
 ```
 
 ### Error Response
+
 ```json
 {
-  "success": false,
-  "statusCode": 400,
-  "message": "Validation failed",
-  "error": {
-    "code": "VALIDATION_FAILED",
-    "details": "Request validation failed",
-    "validationErrors": [
-      {
-        "field": "email",
-        "value": "invalid-email",
-        "constraints": {
-          "isEmail": "email must be an email"
-        }
-      }
-    ],
-    "requestId": "req_abc123_xyz789"
-  },
-  "timestamp": "2024-01-01T00:00:00.000Z",
-  "path": "/api/v1/users"
+    "success": false,
+    "statusCode": 400,
+    "message": "Validation failed",
+    "error": {
+        "code": "VALIDATION_FAILED",
+        "details": "Request validation failed",
+        "validationErrors": [
+            {
+                "field": "email",
+                "value": "invalid-email",
+                "constraints": {
+                    "isEmail": "email must be an email"
+                }
+            }
+        ],
+        "requestId": "req_abc123_xyz789"
+    },
+    "timestamp": "2024-01-01T00:00:00.000Z",
+    "path": "/api/v1/users"
 }
 ```
 

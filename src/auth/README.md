@@ -38,6 +38,7 @@ npm run db:push
 ### 3. Usage Examples
 
 #### Register a new user
+
 ```bash
 POST /auth/register
 {
@@ -50,6 +51,7 @@ POST /auth/register
 ```
 
 #### Login
+
 ```bash
 POST /auth/login
 {
@@ -59,6 +61,7 @@ POST /auth/login
 ```
 
 #### Refresh Token
+
 ```bash
 POST /auth/refresh
 {
@@ -67,6 +70,7 @@ POST /auth/refresh
 ```
 
 #### Access Protected Endpoint
+
 ```bash
 GET /auth/profile
 Authorization: Bearer your-access-token
@@ -75,37 +79,40 @@ Authorization: Bearer your-access-token
 ## Controller Protection
 
 ### Public Endpoints
+
 ```typescript
 @Public()
 @Controller('public')
 export class PublicController {
-  @Get()
-  getPublicData() {
-    return { message: 'No authentication required' };
-  }
+    @Get()
+    getPublicData() {
+        return { message: 'No authentication required' };
+    }
 }
 ```
 
 ### Protected Endpoints (Default)
+
 ```typescript
 @Controller('protected')
 export class ProtectedController {
-  @Get()
-  getProtectedData(@CurrentUser() user: JwtPayload) {
-    return { message: 'Authentication required', user };
-  }
+    @Get()
+    getProtectedData(@CurrentUser() user: JwtPayload) {
+        return { message: 'Authentication required', user };
+    }
 }
 ```
 
 ### Role-based Authorization
+
 ```typescript
 @Controller('admin')
 export class AdminController {
-  @Roles(UserRole.ADMIN)
-  @Get()
-  getAdminData(@CurrentUser() user: JwtPayload) {
-    return { message: 'Admin access required', user };
-  }
+    @Roles(UserRole.ADMIN)
+    @Get()
+    getAdminData(@CurrentUser() user: JwtPayload) {
+        return { message: 'Admin access required', user };
+    }
 }
 ```
 
@@ -125,6 +132,7 @@ export class AdminController {
 ## Database Schema
 
 ### User Model
+
 ```prisma
 model User {
   id                String    @id @default(cuid())
@@ -141,12 +149,13 @@ model User {
   passwordChangedAt DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
-  
+
   sessions UserSession[]
 }
 ```
 
 ### UserSession Model
+
 ```prisma
 model UserSession {
   id           String    @id @default(cuid())
@@ -157,7 +166,7 @@ model UserSession {
   revokedAt    DateTime?
   userAgent    String?
   ipAddress    String?
-  
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 ```

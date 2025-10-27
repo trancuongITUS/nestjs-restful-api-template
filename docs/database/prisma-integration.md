@@ -50,11 +50,11 @@ Database configuration is managed through the ConfigService:
 
 ```typescript
 interface DatabaseConfig {
-    url: string;                          // Primary connection URL
-    connectionLimit: number;              // Max connections in pool
-    poolTimeout: number;                  // Connection timeout (ms)
-    prismaQueryEngineLibrary?: string;    // Custom engine library path
-    prismaQueryEngineBinary?: string;     // Custom engine binary path
+    url: string; // Primary connection URL
+    connectionLimit: number; // Max connections in pool
+    poolTimeout: number; // Connection timeout (ms)
+    prismaQueryEngineLibrary?: string; // Custom engine library path
+    prismaQueryEngineBinary?: string; // Custom engine binary path
 }
 ```
 
@@ -65,6 +65,7 @@ interface DatabaseConfig {
 The Authentication system includes the following core models:
 
 #### User Management & Authentication
+
 - **User**: Base user accounts with role-based access
 - **UserSession**: JWT refresh token management for secure authentication
 - **UserRole**: Enum for role-based authorization (ADMIN, USER)
@@ -79,6 +80,7 @@ User has UserRole enum (ADMIN, USER)
 ### Authentication Flow
 
 The database schema supports JWT-based authentication with:
+
 - **Access Tokens**: Short-lived tokens for API access
 - **Refresh Tokens**: Long-lived tokens stored in UserSession table
 - **Role-based Authorization**: Using UserRole enum for permission management
@@ -257,30 +259,33 @@ try {
 ### Query Optimization
 
 1. **Use select for specific fields**:
+
 ```typescript
 const users = await prisma.user.findMany({
-    select: { id: true, email: true, firstName: true }
+    select: { id: true, email: true, firstName: true },
 });
 ```
 
 2. **Include related data efficiently**:
+
 ```typescript
 const employee = await prisma.employee.findUnique({
     where: { id },
     include: {
         user: { select: { firstName: true, lastName: true } },
         department: true,
-        position: true
-    }
+        position: true,
+    },
 });
 ```
 
 3. **Use pagination for large datasets**:
+
 ```typescript
 const result = await repository.paginate(where, {
     page: 1,
     limit: 20,
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
 });
 ```
 
@@ -316,7 +321,7 @@ const user = await userRepository.create({
     username: 'user123',
     firstName: 'John',
     lastName: 'Doe',
-    password: hashedPassword
+    password: hashedPassword,
 });
 
 // Creation with relations
@@ -325,7 +330,7 @@ const employee = await employeeRepository.create({
     employeeId: 'EMP001',
     department: { connect: { id: departmentId } },
     hireDate: new Date(),
-    salary: 75000
+    salary: 75000,
 });
 ```
 
@@ -342,9 +347,9 @@ const employee = await employeeRepository.findUnique(
         include: {
             user: true,
             department: true,
-            position: true
-        }
-    }
+            position: true,
+        },
+    },
 );
 
 // Complex queries
@@ -352,9 +357,9 @@ const employees = await employeeRepository.findMany({
     where: {
         status: 'ACTIVE',
         department: { name: 'Engineering' },
-        salary: { gte: 50000 }
+        salary: { gte: 50000 },
     },
-    orderBy: { hireDate: 'desc' }
+    orderBy: { hireDate: 'desc' },
 });
 ```
 
@@ -362,15 +367,12 @@ const employees = await employeeRepository.findMany({
 
 ```typescript
 // Simple update
-const user = await userRepository.update(
-    { id: userId },
-    { firstName: 'Jane' }
-);
+const user = await userRepository.update({ id: userId }, { firstName: 'Jane' });
 
 // Conditional update
 const employee = await employeeRepository.updateMany(
     { departmentId: oldDepartmentId },
-    { departmentId: newDepartmentId }
+    { departmentId: newDepartmentId },
 );
 ```
 
@@ -380,7 +382,7 @@ const employee = await employeeRepository.updateMany(
 // Soft delete (update status)
 const employee = await employeeRepository.update(
     { id: employeeId },
-    { status: 'TERMINATED' }
+    { status: 'TERMINATED' },
 );
 
 // Hard delete
@@ -392,25 +394,25 @@ const user = await userRepository.delete({ id: userId });
 ### Common Issues
 
 1. **Connection Errors**
-   - Check DATABASE_URL format
-   - Verify database server is running
-   - Check network connectivity
+    - Check DATABASE_URL format
+    - Verify database server is running
+    - Check network connectivity
 
 2. **Migration Errors**
-   - Review migration files for conflicts
-   - Check for data that violates new constraints
-   - Use `db:migrate:reset` for development (WARNING: Deletes data)
+    - Review migration files for conflicts
+    - Check for data that violates new constraints
+    - Use `db:migrate:reset` for development (WARNING: Deletes data)
 
 3. **Type Errors**
-   - Run `npm run db:generate` after schema changes
-   - Restart TypeScript server in IDE
-   - Check for outdated @prisma/client version
+    - Run `npm run db:generate` after schema changes
+    - Restart TypeScript server in IDE
+    - Check for outdated @prisma/client version
 
 4. **Performance Issues**
-   - Add database indexes for frequently queried fields
-   - Use `select` to limit returned fields
-   - Implement proper pagination
-   - Monitor query performance with logging
+    - Add database indexes for frequently queried fields
+    - Use `select` to limit returned fields
+    - Implement proper pagination
+    - Monitor query performance with logging
 
 ### Health Checks
 

@@ -19,12 +19,14 @@ src/common/constants/
 ## 🔧 Configuration vs Constants
 
 ### ✅ **Use Constants For:**
+
 - **Static values** that never change (error codes, HTTP status codes)
 - **Business logic thresholds** (performance limits, validation rules)
 - **Enum-like values** (environment types, states)
 - **Security patterns** (sensitive field names, safe HTTP methods)
 
 ### ❌ **Use ConfigService For:**
+
 - **Environment-dependent values** (ports, URLs, timeouts)
 - **Configurable limits** (rate limits, request sizes)
 - **External service settings** (database, Redis, email)
@@ -33,7 +35,9 @@ src/common/constants/
 ## 📚 **File Descriptions**
 
 ### `application.constants.ts`
+
 **Non-environment dependent application constants**
+
 - Environment type enums (for type checking)
 - Compression settings (static algorithm parameters)
 - Log context names
@@ -52,7 +56,9 @@ export const COMPRESSION = {
 ```
 
 ### `error.constants.ts`
+
 **Error codes and error-related constants**
+
 - HTTP error codes
 - Validation error codes
 - Business logic error codes
@@ -68,7 +74,9 @@ export const ERROR_CODE = {
 ```
 
 ### `http.constants.ts`
+
 **HTTP-related constants**
+
 - HTTP status codes
 - HTTP methods
 - Content types
@@ -90,7 +98,9 @@ export const HTTP_METHOD = {
 ```
 
 ### `performance.constants.ts`
+
 **Performance monitoring constants**
+
 - Response time thresholds
 - Error rate thresholds
 - Metrics collection settings
@@ -111,7 +121,9 @@ export const HEALTH_STATUS = {
 ```
 
 ### `security.constants.ts`
+
 **Security-related constants**
+
 - Circuit breaker configuration (static parameters)
 - Retry logic configuration (static parameters)
 - Sensitive data field patterns
@@ -143,7 +155,9 @@ export const SENSITIVE_FIELDS = [
 ```
 
 ### `validation.constants.ts`
+
 **Validation rules and limits**
+
 - Pagination limits
 - Search query limits
 - String length limits
@@ -168,6 +182,7 @@ export const REGEX_PATTERN = {
 ## 🚀 **Usage Examples**
 
 ### **Importing Constants**
+
 ```typescript
 // Import specific constants
 import { ERROR_CODE, HTTP_STATUS } from '../common/constants';
@@ -180,6 +195,7 @@ import { VALIDATION } from '../common/constants/validation.constants';
 ```
 
 ### **Using Constants in Code**
+
 ```typescript
 // Error handling
 throw new BadRequestException({
@@ -204,16 +220,18 @@ if (responseTime > PERFORMANCE.SLOW_REQUEST_THRESHOLD) {
 ```
 
 ### **Type Safety**
+
 ```typescript
 // Constants are strongly typed
-type Environment = typeof ENVIRONMENT[keyof typeof ENVIRONMENT]; // 'development' | 'production' | 'test'
-type HttpMethod = typeof HTTP_METHOD[keyof typeof HTTP_METHOD]; // 'GET' | 'POST' | etc.
-type ErrorCode = typeof ERROR_CODE[keyof typeof ERROR_CODE]; // 'VALIDATION_ERROR' | etc.
+type Environment = (typeof ENVIRONMENT)[keyof typeof ENVIRONMENT]; // 'development' | 'production' | 'test'
+type HttpMethod = (typeof HTTP_METHOD)[keyof typeof HTTP_METHOD]; // 'GET' | 'POST' | etc.
+type ErrorCode = (typeof ERROR_CODE)[keyof typeof ERROR_CODE]; // 'VALIDATION_ERROR' | etc.
 ```
 
 ## 🔄 **Migration from Old Constants**
 
 ### **Removed Constants (Now in ConfigService)**
+
 These constants have been removed and are now managed by the ConfigService:
 
 ```typescript
@@ -231,6 +249,7 @@ const timeout = this.configService.performance.requestTimeout;
 ```
 
 ### **Renamed Constants**
+
 Some constants have been reorganized for better clarity:
 
 ```typescript
@@ -248,24 +267,28 @@ const retries = RETRY.DEFAULT_MAX_RETRIES;
 ## 📋 **Best Practices**
 
 ### **When to Add New Constants**
+
 1. **Static business rules** that don't change with environment
 2. **Enum-like values** for type safety
 3. **Validation thresholds** that are business requirements
 4. **Error codes** for consistent error handling
 
 ### **When to Use ConfigService Instead**
+
 1. **Environment-dependent values** (ports, URLs, secrets)
 2. **Configurable timeouts** and limits
 3. **Feature flags** and toggles
 4. **External service configuration**
 
 ### **Naming Conventions**
+
 - Use **UPPER_CASE** for constant objects
 - Use **descriptive names** that explain the purpose
 - Group related constants in objects
 - Add JSDoc comments for complex constants
 
 ### **Organization**
+
 - Keep constants **logically grouped** by domain
 - Use **as const** for type safety
 - Export from **index.ts** for centralized access
@@ -274,6 +297,7 @@ const retries = RETRY.DEFAULT_MAX_RETRIES;
 ## 🔍 **Validation and Testing**
 
 ### **Type Checking**
+
 ```typescript
 // Ensure constants are properly typed
 const validEnvironment: Environment = ENVIRONMENT.PRODUCTION; // ✅
@@ -281,6 +305,7 @@ const invalidEnvironment: Environment = 'invalid'; // ❌ TypeScript error
 ```
 
 ### **Runtime Validation**
+
 ```typescript
 // Validate constant usage in tests
 describe('Constants', () => {
@@ -299,6 +324,7 @@ describe('Constants', () => {
 ## 🚨 **Common Pitfalls**
 
 ### **Don't Mix Configuration with Constants**
+
 ```typescript
 // ❌ BAD - Environment-dependent value in constants
 export const API_URL = process.env.API_URL || 'http://localhost:3000';
@@ -308,15 +334,21 @@ export const API_URL = process.env.API_URL || 'http://localhost:3000';
 ```
 
 ### **Don't Hardcode Magic Numbers**
+
 ```typescript
 // ❌ BAD - Magic number in code
-if (responseTime > 5000) { /* slow request */ }
+if (responseTime > 5000) {
+    /* slow request */
+}
 
 // ✅ GOOD - Use named constant
-if (responseTime > PERFORMANCE.SLOW_REQUEST_THRESHOLD) { /* slow request */ }
+if (responseTime > PERFORMANCE.SLOW_REQUEST_THRESHOLD) {
+    /* slow request */
+}
 ```
 
 ### **Don't Create Overly Granular Constants**
+
 ```typescript
 // ❌ BAD - Too granular
 export const COLORS = {

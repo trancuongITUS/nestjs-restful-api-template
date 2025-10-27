@@ -1,6 +1,7 @@
 # Global Utilities Documentation
 
 ## 📋 **Overview**
+
 This directory contains global utility functions that can be used throughout the entire application. These utilities follow the **Single Responsibility Principle** and are organized by category for better maintainability.
 
 ## 🗂️ **File Structure**
@@ -17,8 +18,14 @@ src/common/utils/
 ## 🔍 **Type Utilities (`type.util.ts`)**
 
 ### **Basic Type Checking**
+
 ```typescript
-import { isString, isNumber, isBoolean, isNullOrUndefined } from '@/common/utils';
+import {
+    isString,
+    isNumber,
+    isBoolean,
+    isNullOrUndefined,
+} from '@/common/utils';
 
 // Type guards with proper TypeScript inference
 if (isString(value)) {
@@ -33,8 +40,15 @@ if (isNumber(value)) {
 ```
 
 ### **Advanced Type Checking**
+
 ```typescript
-import { isPrimitive, isEmpty, isDefined, isObject, isArray } from '@/common/utils';
+import {
+    isPrimitive,
+    isEmpty,
+    isDefined,
+    isObject,
+    isArray,
+} from '@/common/utils';
 
 // Check for primitive types (string | number | boolean)
 if (isPrimitive(value)) {
@@ -55,23 +69,25 @@ if (isDefined(config.apiKey)) {
 ```
 
 ### **Available Type Utilities**
-| Function | Description | Return Type |
-|----------|-------------|-------------|
-| `isNullOrUndefined(value)` | Check if value is null or undefined | `value is null \| undefined` |
-| `isString(value)` | Check if value is a string | `value is string` |
-| `isNumber(value)` | Check if value is a number | `value is number` |
-| `isBoolean(value)` | Check if value is a boolean | `value is boolean` |
-| `isPrimitive(value)` | Check if value is string, number, or boolean | `value is string \| number \| boolean` |
-| `isEmptyString(value)` | Check if value is an empty string | `value is ''` |
-| `isObject(value)` | Check if value is an object (excluding null/arrays) | `value is Record<string, unknown>` |
-| `isArray(value)` | Check if value is an array | `value is unknown[]` |
-| `isFunction(value)` | Check if value is a function | `value is (...args: unknown[]) => unknown` |
-| `isDefined(value)` | Check if value is not null and not undefined | `value is T` |
-| `isEmpty(value)` | Check if value is empty (null, undefined, '', [], {}) | `boolean` |
+
+| Function                   | Description                                           | Return Type                                |
+| -------------------------- | ----------------------------------------------------- | ------------------------------------------ |
+| `isNullOrUndefined(value)` | Check if value is null or undefined                   | `value is null \| undefined`               |
+| `isString(value)`          | Check if value is a string                            | `value is string`                          |
+| `isNumber(value)`          | Check if value is a number                            | `value is number`                          |
+| `isBoolean(value)`         | Check if value is a boolean                           | `value is boolean`                         |
+| `isPrimitive(value)`       | Check if value is string, number, or boolean          | `value is string \| number \| boolean`     |
+| `isEmptyString(value)`     | Check if value is an empty string                     | `value is ''`                              |
+| `isObject(value)`          | Check if value is an object (excluding null/arrays)   | `value is Record<string, unknown>`         |
+| `isArray(value)`           | Check if value is an array                            | `value is unknown[]`                       |
+| `isFunction(value)`        | Check if value is a function                          | `value is (...args: unknown[]) => unknown` |
+| `isDefined(value)`         | Check if value is not null and not undefined          | `value is T`                               |
+| `isEmpty(value)`           | Check if value is empty (null, undefined, '', [], {}) | `boolean`                                  |
 
 ## 🛠️ **Object Utilities (`object.util.ts`)**
 
 ### **Options Merging**
+
 ```typescript
 import { mergeOptions } from '@/common/utils';
 
@@ -97,6 +113,7 @@ const finalOptions = mergeOptions(defaults, userOptions);
 ```
 
 ### **Object Manipulation**
+
 ```typescript
 import { pick, omit, deepClone, hasProperty } from '@/common/utils';
 
@@ -105,7 +122,7 @@ const user = {
     name: 'John',
     email: 'john@example.com',
     password: 'secret',
-    role: 'admin'
+    role: 'admin',
 };
 
 // Pick specific properties
@@ -127,17 +144,19 @@ if (hasProperty(user, 'email')) {
 ```
 
 ### **Available Object Utilities**
-| Function | Description | Use Case |
-|----------|-------------|----------|
-| `mergeOptions<T>(defaults, options)` | Merge user options with defaults | Configuration merging |
-| `deepClone<T>(obj)` | Create deep copy of object | Immutable operations |
-| `pick<T, K>(obj, keys)` | Extract specific properties | API response filtering |
-| `omit<T, K>(obj, keys)` | Remove specific properties | Sensitive data removal |
-| `hasProperty<T, K>(obj, property)` | Check if object has property | Safe property access |
+
+| Function                             | Description                      | Use Case               |
+| ------------------------------------ | -------------------------------- | ---------------------- |
+| `mergeOptions<T>(defaults, options)` | Merge user options with defaults | Configuration merging  |
+| `deepClone<T>(obj)`                  | Create deep copy of object       | Immutable operations   |
+| `pick<T, K>(obj, keys)`              | Extract specific properties      | API response filtering |
+| `omit<T, K>(obj, keys)`              | Remove specific properties       | Sensitive data removal |
+| `hasProperty<T, K>(obj, property)`   | Check if object has property     | Safe property access   |
 
 ## 🚀 **Usage Examples**
 
 ### **In Controllers**
+
 ```typescript
 import { isString, isNullOrUndefined, isEmpty } from '@/common/utils';
 
@@ -148,7 +167,7 @@ export class UserController {
         if (!isString(query) || isEmpty(query)) {
             throw new BadRequestException('Query must be a non-empty string');
         }
-        
+
         // query is now typed as string and guaranteed non-empty
         return this.userService.search(query);
     }
@@ -156,6 +175,7 @@ export class UserController {
 ```
 
 ### **In Services**
+
 ```typescript
 import { mergeOptions, isDefined, pick } from '@/common/utils';
 
@@ -169,14 +189,14 @@ export class UserService {
 
     findMany(options: Partial<typeof this.defaultOptions> = {}) {
         const finalOptions = mergeOptions(this.defaultOptions, options);
-        
+
         // Use finalOptions with guaranteed defaults
         return this.repository.find(finalOptions);
     }
 
     async updateUser(id: string, updateData: Partial<User>) {
         const existingUser = await this.findById(id);
-        
+
         if (!isDefined(existingUser)) {
             throw new NotFoundException('User not found');
         }
@@ -189,6 +209,7 @@ export class UserService {
 ```
 
 ### **In Validation**
+
 ```typescript
 import { isString, isNumber, isEmpty, isPrimitive } from '@/common/utils';
 
@@ -203,7 +224,7 @@ export class CustomValidator {
         }
 
         const stringValue = String(value);
-        
+
         if (isEmpty(stringValue)) {
             throw new Error('Value cannot be empty');
         }
@@ -216,21 +237,25 @@ export class CustomValidator {
 ## 🎯 **Benefits**
 
 ### **✅ Type Safety**
+
 - All utilities provide proper TypeScript type guards
 - IntelliSense support with accurate type inference
 - Compile-time error detection
 
 ### **✅ Consistency**
+
 - Standardized type checking across the application
 - Consistent object manipulation patterns
 - Unified error handling approaches
 
 ### **✅ Reusability**
+
 - Available throughout the entire application
 - No code duplication for common operations
 - Easy to extend with new utilities
 
 ### **✅ Performance**
+
 - Optimized implementations
 - No unnecessary object creation
 - Efficient type checking algorithms
@@ -255,6 +280,7 @@ When adding new utilities:
 6. **Write tests**: Ensure comprehensive test coverage
 
 Example of adding a new utility:
+
 ```typescript
 // In src/common/utils/string.util.ts
 /**
@@ -262,8 +288,9 @@ Example of adding a new utility:
  * @example toTitleCase('hello world') // 'Hello World'
  */
 export function toTitleCase(str: string): string {
-    return str.replace(/\w\S*/g, (txt) => 
-        txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+    return str.replace(
+        /\w\S*/g,
+        (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(),
     );
 }
 

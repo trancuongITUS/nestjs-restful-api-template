@@ -43,24 +43,28 @@ src/config/
 ## 🔧 Configuration Categories
 
 ### Application Configuration
+
 ```typescript
 const appConfig = configService.app;
 // { port: 3000, apiPrefix: 'api/v1', environment: 'development', isDevelopment: true }
 ```
 
 ### Security Configuration
+
 ```typescript
 const security = configService.security;
 // { allowedOrigins: ['http://localhost:3000'], maxRequestSize: '10mb' }
 ```
 
 ### Rate Limiting Configuration
+
 ```typescript
 const rateLimit = configService.rateLimit;
 // { short: { ttl: 1000, limit: 3 }, medium: { ttl: 10000, limit: 20 } }
 ```
 
 ### Database Configuration
+
 ```typescript
 const database = configService.database;
 // { url: 'postgresql://...', ssl: false }
@@ -69,6 +73,7 @@ const database = configService.database;
 ## 🚀 Usage Examples
 
 ### Basic Usage
+
 ```typescript
 import { ConfigService } from './config';
 
@@ -80,7 +85,7 @@ export class YourService {
         // Type-safe access
         const port = this.configService.app.port;
         const isDev = this.configService.app.isDevelopment;
-        
+
         // Environment checks
         if (this.configService.isProduction()) {
             // Production-specific logic
@@ -90,6 +95,7 @@ export class YourService {
 ```
 
 ### Advanced Usage
+
 ```typescript
 // Check if configuration exists
 const hasRedis = this.configService.isDefined('redis');
@@ -104,6 +110,7 @@ const dbPort = this.configService.get('database.port', 5432);
 ## 📋 Environment Variables
 
 ### Required Variables
+
 - `NODE_ENV`: Application environment
 - `PORT`: Application port
 - `API_PREFIX`: API route prefix
@@ -112,6 +119,7 @@ const dbPort = this.configService.get('database.port', 5432);
 - `LOG_LEVEL`: Logging level
 
 ### Optional Variables (with defaults)
+
 - Rate limiting settings
 - Performance settings
 - Database configuration
@@ -123,12 +131,14 @@ const dbPort = this.configService.get('database.port', 5432);
 ## 🔒 Security Features
 
 ### Environment Variable Validation
+
 - **Minimum length requirements** for secrets (32+ characters)
 - **Format validation** for URLs, emails, ports
 - **Type validation** for numbers, booleans
 - **Enum validation** for specific values
 
 ### Environment Separation
+
 - **Different configurations** for dev/prod/test
 - **Secure defaults** in production
 - **Validation on startup** with clear error messages
@@ -136,26 +146,31 @@ const dbPort = this.configService.get('database.port', 5432);
 ## 🎯 Benefits Achieved
 
 ### ✅ Type Safety
+
 - No more `process.env.VARIABLE` scattered throughout code
 - Compile-time checking for configuration access
 - IntelliSense support for configuration properties
 
 ### ✅ Validation
+
 - Environment variables validated at startup
 - Clear error messages for missing/invalid configuration
 - Prevents runtime errors from misconfiguration
 
 ### ✅ Organization
+
 - Centralized configuration management
 - Logical grouping of related settings
 - Easy to extend and maintain
 
 ### ✅ Environment Management
+
 - Support for multiple environment files
 - Environment-specific defaults and overrides
 - Easy deployment configuration
 
 ### ✅ Best Practices
+
 - Follows NestJS configuration patterns
 - Industry-standard validation with Joi
 - Comprehensive documentation and examples
@@ -163,6 +178,7 @@ const dbPort = this.configService.get('database.port', 5432);
 ## 🔄 Migration from Previous Code
 
 ### Before
+
 ```typescript
 // Scattered throughout codebase
 const port = process.env.PORT || 3000;
@@ -171,6 +187,7 @@ const origins = (process.env.ALLOWED_ORIGINS || '').split(',');
 ```
 
 ### After
+
 ```typescript
 // Centralized, type-safe configuration
 const port = this.configService.app.port;
@@ -181,6 +198,7 @@ const origins = this.configService.security.allowedOrigins;
 ## 📚 Next Steps
 
 ### 1. **Environment Setup**
+
 ```bash
 # Copy and configure environment file
 cp env.example .env
@@ -190,21 +208,27 @@ npm install @nestjs/config joi
 ```
 
 ### 2. **Add Database Configuration**
+
 When you add database support, uncomment the database section in your `.env` file:
+
 ```env
 DATABASE_URL=postgresql://username:password@localhost:5432/hrm_db
 DATABASE_SSL=true
 ```
 
 ### 3. **Add JWT Configuration**
+
 When implementing authentication:
+
 ```env
 JWT_SECRET=your-super-secret-jwt-key-at-least-32-characters-long
 JWT_EXPIRES_IN=15m
 ```
 
 ### 4. **Extend Configuration**
+
 To add new configuration sections, follow the pattern in the documentation:
+
 1. Update `env.validation.ts`
 2. Update `configuration.ts`
 3. Update `config.service.ts`
@@ -213,17 +237,21 @@ To add new configuration sections, follow the pattern in the documentation:
 ## 🧪 Testing the Configuration
 
 ### Build Test
+
 ```bash
 npm run build  # Should compile without errors
 ```
 
 ### Runtime Test
+
 ```bash
 npm run start  # Should start with configuration logging
 ```
 
 ### Configuration Validation Test
+
 Try starting with invalid configuration to see validation in action:
+
 ```bash
 # Set invalid port
 PORT=invalid npm run start
