@@ -11,7 +11,9 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { User } from '@prisma/client';
+import type { Request } from 'express';
 import { UserRepository } from '../database/repositories/user.repository';
 import { UserSessionRepository } from '../database/repositories/user-session.repository';
 import {
@@ -28,12 +30,15 @@ import {
     getRefreshTokenExpiry,
 } from '../common/utils/security.util';
 import { AUTH_ERROR_MESSAGES } from '../common/constants/security.constants';
+import { IAuditEvent } from '../audit/interfaces';
+import { AuditAction, AuditResource } from '../audit/enums';
 
 @Injectable()
 export class AuthService {
     constructor(
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
+        private readonly eventEmitter: EventEmitter2,
         private readonly userRepository: UserRepository,
         private readonly userSessionRepository: UserSessionRepository,
         private readonly passwordValidationService: PasswordValidationService,
@@ -55,7 +60,10 @@ export class AuthService {
     /**
      * Register a new user
      */
-    async register(registerDto: RegisterDto): Promise<LoginResponse> {
+    async register(
+        registerDto: RegisterDto,
+        req?: Request,
+    ): Promise<LoginResponse> {
         // Check if user already exists
         const existingUserByEmail = await this.userRepository.findByEmail(
             registerDto.email,
@@ -87,7 +95,7 @@ export class AuthService {
         const tokens = await this.generateTokens(user);
         const refreshTokenExpiry = getRefreshTokenExpiry();
 
-        await this.userSessionRepository.createSession(
+        const session = await this.userSessionRepository.createSession(
             user.id,
             tokens.refreshToken,
             refreshTokenExpiry,
@@ -98,6 +106,28 @@ export class AuthService {
             { id: user.id },
             { lastLoginAt: new Date() },
         );
+
+        // Emit audit event
+        if (req) {
+            this.emitAuditEvent({
+                userId: user.id,
+                username: user.username,
+                userRole: user.role,
+                action: AuditAction.REGISTER,
+                resource: AuditResource.AUTH,
+                resourceId: user.id,
+                method: 'POST',
+                endpoint: '/auth/register',
+                ipAddress: this.getClientIp(req),
+                userAgent: req.headers['user-agent'],
+                sessionId: session.id,
+                statusCode: 201,
+                metadata: {
+                    email: user.email,
+                    emailVerified: user.emailVerified,
+                },
+            });
+        }
 
         return {
             ...tokens,
@@ -117,7 +147,7 @@ export class AuthService {
     /**
      * Login user and return tokens
      */
-    async login(loginDto: LoginDto): Promise<LoginResponse> {
+    async login(loginDto: LoginDto, req?: Request): Promise<LoginResponse> {
         const user = await this.validateUser(loginDto.email, loginDto.password);
         if (!user) {
             throw new UnauthorizedException(
@@ -129,7 +159,7 @@ export class AuthService {
         const tokens = await this.generateTokens(user);
         const refreshTokenExpiry = getRefreshTokenExpiry();
 
-        await this.userSessionRepository.createSession(
+        const session = await this.userSessionRepository.createSession(
             user.id,
             tokens.refreshToken,
             refreshTokenExpiry,
@@ -140,6 +170,29 @@ export class AuthService {
             { id: user.id },
             { lastLoginAt: new Date() },
         );
+
+        // Emit audit event
+        if (req) {
+            this.emitAuditEvent({
+                userId: user.id,
+                username: user.username,
+                userRole: user.role,
+                action: AuditAction.LOGIN,
+                resource: AuditResource.AUTH,
+                resourceId: user.id,
+                method: 'POST',
+                endpoint: '/auth/login',
+                ipAddress: this.getClientIp(req),
+                userAgent: req.headers['user-agent'],
+                sessionId: session.id,
+                statusCode: 200,
+                metadata: {
+                    email: user.email,
+                    emailVerified: user.emailVerified,
+                    loginMethod: 'password',
+                },
+            });
+        }
 
         return {
             ...tokens,
@@ -159,7 +212,10 @@ export class AuthService {
     /**
      * Refresh access token using refresh token
      */
-    async refreshToken(refreshToken: string): Promise<AuthTokens> {
+    async refreshToken(
+        refreshToken: string,
+        req?: Request,
+    ): Promise<AuthTokens> {
         try {
             // Verify refresh token
             this.jwtService.verify<RefreshTokenPayload>(refreshToken, {
@@ -193,11 +249,33 @@ export class AuthService {
             // Update session with new refresh token
             await this.userSessionRepository.revokeSession(refreshToken);
             const newRefreshTokenExpiry = getRefreshTokenExpiry();
-            await this.userSessionRepository.createSession(
+            const newSession = await this.userSessionRepository.createSession(
                 session.user.id,
                 tokens.refreshToken,
                 newRefreshTokenExpiry,
             );
+
+            // Emit audit event
+            if (req) {
+                this.emitAuditEvent({
+                    userId: session.user.id,
+                    username: session.user.username,
+                    userRole: session.user.role,
+                    action: AuditAction.REFRESH_TOKEN,
+                    resource: AuditResource.AUTH,
+                    resourceId: session.user.id,
+                    method: 'POST',
+                    endpoint: '/auth/refresh',
+                    ipAddress: this.getClientIp(req),
+                    userAgent: req.headers['user-agent'],
+                    sessionId: newSession.id,
+                    statusCode: 200,
+                    metadata: {
+                        oldSessionId: session.id,
+                        newSessionId: newSession.id,
+                    },
+                });
+            }
 
             return tokens;
         } catch {
@@ -210,9 +288,35 @@ export class AuthService {
     /**
      * Logout user by revoking refresh token
      */
-    async logout(refreshToken: string): Promise<void> {
+    async logout(
+        refreshToken: string,
+        userId?: string,
+        username?: string,
+        userRole?: string,
+        req?: Request,
+    ): Promise<void> {
         try {
             await this.userSessionRepository.revokeSession(refreshToken);
+
+            // Emit audit event
+            if (req && userId) {
+                this.emitAuditEvent({
+                    userId,
+                    username,
+                    userRole,
+                    action: AuditAction.LOGOUT,
+                    resource: AuditResource.AUTH,
+                    resourceId: userId,
+                    method: 'POST',
+                    endpoint: '/auth/logout',
+                    ipAddress: this.getClientIp(req),
+                    userAgent: req.headers['user-agent'],
+                    statusCode: 204,
+                    metadata: {
+                        logoutMethod: 'single_device',
+                    },
+                });
+            }
         } catch {
             // Silent fail - token might already be revoked
         }
@@ -221,8 +325,33 @@ export class AuthService {
     /**
      * Logout user from all devices
      */
-    async logoutAllDevices(userId: string): Promise<void> {
+    async logoutAllDevices(
+        userId: string,
+        username?: string,
+        userRole?: string,
+        req?: Request,
+    ): Promise<void> {
         await this.userSessionRepository.revokeAllUserSessions(userId);
+
+        // Emit audit event
+        if (req) {
+            this.emitAuditEvent({
+                userId,
+                username,
+                userRole,
+                action: AuditAction.LOGOUT,
+                resource: AuditResource.AUTH,
+                resourceId: userId,
+                method: 'POST',
+                endpoint: '/auth/logout-all',
+                ipAddress: this.getClientIp(req),
+                userAgent: req.headers['user-agent'],
+                statusCode: 204,
+                metadata: {
+                    logoutMethod: 'all_devices',
+                },
+            });
+        }
     }
 
     /**
@@ -273,6 +402,7 @@ export class AuthService {
         userId: string,
         currentPassword: string,
         newPassword: string,
+        req?: Request,
     ): Promise<void> {
         const user = await this.userRepository.findUnique({ id: userId });
         if (!user) {
@@ -304,6 +434,27 @@ export class AuthService {
 
         // Revoke all user sessions to force re-login
         await this.userSessionRepository.revokeAllUserSessions(userId);
+
+        // Emit audit event
+        if (req) {
+            this.emitAuditEvent({
+                userId,
+                username: user.username,
+                userRole: user.role,
+                action: AuditAction.CHANGE_PASSWORD,
+                resource: AuditResource.USER,
+                resourceId: userId,
+                method: 'POST',
+                endpoint: '/auth/change-password',
+                ipAddress: this.getClientIp(req),
+                userAgent: req.headers['user-agent'],
+                statusCode: 204,
+                metadata: {
+                    passwordChangedAt: new Date().toISOString(),
+                    allSessionsRevoked: true,
+                },
+            });
+        }
     }
 
     /**
@@ -318,5 +469,29 @@ export class AuthService {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { password: _, ...userProfile } = user;
         return userProfile;
+    }
+
+    /**
+     * Extract client IP address from request
+     */
+    private getClientIp(req: Request): string {
+        return (
+            (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+            req.ip ||
+            req.socket?.remoteAddress ||
+            'unknown'
+        );
+    }
+
+    /**
+     * Emit audit event for authentication actions
+     */
+    private emitAuditEvent(event: IAuditEvent): void {
+        try {
+            this.eventEmitter.emit('audit.log.created', event);
+        } catch (error) {
+            // Silent fail - audit should not break authentication flow
+            // Error will be logged by EventEmitter
+        }
     }
 }
