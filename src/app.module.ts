@@ -1,6 +1,7 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { APP_PIPE, APP_FILTER, APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SecurityMiddleware } from './core/middlewares/security.middleware';
@@ -20,6 +21,7 @@ import {
 import { ConfigModule, ConfigService } from './config';
 import { PrismaModule } from './database';
 import { AuthModule } from './auth/auth.module';
+import { AuditModule } from './audit/audit.module';
 import { GlobalJwtAuthGuard } from './auth/guards/global-jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { TIMEOUT_MS } from './common/constants';
@@ -31,6 +33,25 @@ import { TIMEOUT_MS } from './common/constants';
 
         // Database module (global)
         PrismaModule,
+
+        // Event emitter module (global) for async audit logging
+        EventEmitterModule.forRoot({
+            // Use this name as a delimiter to segment namespaces
+            delimiter: '.',
+            // Set this to true if you want to emit events in newListener event
+            newListener: false,
+            // Set this to true if you want to emit events in removeListener event
+            removeListener: false,
+            // Set this to true to enable wildcards
+            wildcard: false,
+            // Set this to false to emit maxListeners exceeded warning
+            verboseMemoryLeak: false,
+            // Set this to true to disable throwing uncaughtException if an error event is emitted and it has no listeners
+            ignoreErrors: false,
+        }),
+
+        // Audit logging module (must come after EventEmitterModule)
+        AuditModule,
 
         // Authentication module
         AuthModule,
