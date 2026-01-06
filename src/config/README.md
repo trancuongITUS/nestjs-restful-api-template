@@ -1,6 +1,6 @@
 # Configuration Management
 
-This directory contains the complete configuration management system for the NestJS HRM Backend application, following best practices for environment variable handling, validation, and type safety.
+This directory contains the complete configuration management system for the NestJS Backend application, following best practices for environment variable handling, validation, and type safety.
 
 ## 📁 File Structure
 
@@ -161,7 +161,7 @@ DATABASE_SSL=true
 NODE_ENV=test
 PORT=3001
 LOG_LEVEL=error
-DATABASE_NAME=hrm_test_db
+DATABASE_NAME=test_db
 ```
 
 ## 🔍 Configuration Service API

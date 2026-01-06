@@ -150,12 +150,6 @@ export class AuditInterceptor implements NestInterceptor {
         if (path.includes('/role')) return AuditResource.ROLE;
         if (path.includes('/permission')) return AuditResource.PERMISSION;
 
-        // HRM resources
-        if (path.includes('/department')) return AuditResource.DEPARTMENT;
-        if (path.includes('/position')) return AuditResource.POSITION;
-        if (path.includes('/salary')) return AuditResource.SALARY;
-        if (path.includes('/employee')) return AuditResource.EMPLOYEE;
-
         // System
         if (path.includes('/config')) return AuditResource.CONFIG;
 
