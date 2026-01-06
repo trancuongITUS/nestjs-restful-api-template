@@ -57,3 +57,90 @@ model UserSession {
 
   @@map("user_sessions")
 }
+
+// ============================================================================
+// AUDIT LOGGING
+// ============================================================================
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  timestamp DateTime @default(now()) @db.Timestamptz
+
+  // User context
+  userId   String? @map("user_id")
+  username String?
+  userRole String? @map("user_role")
+
+  // Request context
+  action     AuditAction
+  resource   AuditResource
+  resourceId String?       @map("resource_id")
+  method     String // HTTP method: POST, PUT, PATCH, DELETE
+  endpoint   String // API endpoint path
+
+  // Metadata
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent")
+  sessionId String? @map("session_id")
+  requestId String? @map("request_id")
+
+  // Change tracking (JSONB for flexibility)
+  changesBefore Json? @map("changes_before")
+  changesAfter  Json? @map("changes_after")
+  metadata      Json? // Additional context
+
+  // Compliance
+  statusCode   Int     @map("status_code")
+  errorMessage String? @map("error_message")
+
+  // Audit trail
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Indexes for performance
+  @@index([userId, timestamp])
+  @@index([action, timestamp])
+  @@index([resource, timestamp])
+  @@index([timestamp])
+  @@index([sessionId])
+  @@map("audit_logs")
+}
+
+enum AuditAction {
+  // Authentication
+  LOGIN
+  LOGOUT
+  REFRESH_TOKEN
+  CHANGE_PASSWORD
+  REGISTER
+
+  // CRUD
+  CREATE
+  READ
+  UPDATE
+  DELETE
+
+  // Administrative
+  ROLE_CHANGE
+  PERMISSION_CHANGE
+  USER_ACTIVATE
+  USER_DEACTIVATE
+  SESSION_REVOKE
+
+  // System
+  CONFIG_CHANGE
+  SYSTEM_EVENT
+}
+
+enum AuditResource {
+  USER
+  USER_SESSION
+  AUTH
+  ROLE
+  PERMISSION
+  DEPARTMENT
+  POSITION
+  SALARY
+  EMPLOYEE
+  CONFIG
+  SYSTEM
+}
