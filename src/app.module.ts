@@ -22,6 +22,7 @@ import { ConfigModule, ConfigService } from './config';
 import { PrismaModule } from './database';
 import { AuthModule } from './auth/auth.module';
 import { AuditModule } from './audit/audit.module';
+import { AuditInterceptor } from './audit/interceptors';
 import { GlobalJwtAuthGuard } from './auth/guards/global-jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { TIMEOUT_MS } from './common/constants';
@@ -99,6 +100,10 @@ import { TIMEOUT_MS } from './common/constants';
             useClass: HttpExceptionFilter,
         },
         // Global interceptors (order matters - they execute in reverse order)
+        {
+            provide: APP_INTERCEPTOR,
+            useClass: AuditInterceptor, // Must be first to capture all requests
+        },
         {
             provide: APP_INTERCEPTOR,
             useClass: LoggingInterceptor,
