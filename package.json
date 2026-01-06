@@ -26,7 +26,8 @@
         "db:studio": "prisma studio",
         "db:seed": "ts-node prisma/seed.ts",
         "db:format": "prisma format",
-        "db:validate": "prisma validate"
+        "db:validate": "prisma validate",
+        "audit:cleanup": "ts-node src/audit/scripts/cleanup-old-audit-logs.ts"
     },
     "dependencies": {
         "@nestjs/common": "^11.0.1",
