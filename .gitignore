@@ -30,3 +30,6 @@ lerna-debug.log*
 nestjs-restful-api-template.code-workspace
 
 /generated/prisma
+
+# ck
+/plans
