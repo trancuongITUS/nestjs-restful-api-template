@@ -26,4 +26,7 @@ lerna-debug.log*
 .temp
 .tmp
 
+# workspace
+nestjs-restful-api-template.code-workspace
+
 /generated/prisma

@@ -37,9 +37,9 @@ async function bootstrap(): Promise<void> {
 
     // Swagger Configuration
     const config = new DocumentBuilder()
-        .setTitle('HRM Backend API')
+        .setTitle('NestJS Restful API Template')
         .setDescription(
-            'Human Resource Management System Backend API Documentation. ' +
+            'NestJS Restful API Template Documentation. ' +
                 'This API provides comprehensive endpoints for managing employees, authentication, and HR operations.',
         )
         .setVersion('1.0.0')
@@ -70,7 +70,7 @@ async function bootstrap(): Promise<void> {
             tagsSorter: 'alpha',
             operationsSorter: 'alpha',
         },
-        customSiteTitle: 'HRM Backend API Documentation',
+        customSiteTitle: 'NestJS Restful API Template Documentation',
         customfavIcon: '/favicon.ico',
         customCss: `
             .swagger-ui .topbar { display: none }

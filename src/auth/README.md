@@ -25,7 +25,7 @@ JWT_REFRESH_SECRET=your-super-secret-refresh-key-at-least-32-characters-long
 JWT_REFRESH_EXPIRES_IN=7d
 
 # Database
-DATABASE_URL=postgresql://username:password@localhost:5432/hrm_db
+DATABASE_URL=postgresql://username:password@localhost:5432/db
 ```
 
 ### 2. Database Migration

@@ -9,7 +9,7 @@ import {
     Body,
     UseGuards,
     Get,
-    Request,
+    Req,
     HttpCode,
     HttpStatus,
 } from '@nestjs/common';
@@ -19,6 +19,7 @@ import {
     ApiResponse,
     ApiBearerAuth,
 } from '@nestjs/swagger';
+import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import {
     RegisterDto,
@@ -113,8 +114,8 @@ export class AuthController {
     })
     @Public()
     @Post('register')
-    async register(@Body() registerDto: RegisterDto) {
-        return this.authService.register(registerDto);
+    async register(@Body() registerDto: RegisterDto, @Req() req: Request) {
+        return this.authService.register(registerDto, req);
     }
 
     /**
@@ -182,8 +183,8 @@ export class AuthController {
     @Public()
     @Post('login')
     @HttpCode(HttpStatus.OK)
-    async login(@Body() loginDto: LoginDto) {
-        return this.authService.login(loginDto);
+    async login(@Body() loginDto: LoginDto, @Req() req: Request) {
+        return this.authService.login(loginDto, req);
     }
 
     /**
@@ -232,8 +233,8 @@ export class AuthController {
     @Public()
     @Post('refresh')
     @HttpCode(HttpStatus.OK)
-    async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
-        return this.authService.refreshToken(refreshTokenDto.refreshToken);
+    async refresh(@Body() refreshTokenDto: RefreshTokenDto, @Req() req: Request) {
+        return this.authService.refreshToken(refreshTokenDto.refreshToken, req);
     }
 
     /**
@@ -259,8 +260,18 @@ export class AuthController {
     @UseGuards(JwtAuthGuard)
     @Post('logout')
     @HttpCode(HttpStatus.NO_CONTENT)
-    async logout(@Body() refreshTokenDto: RefreshTokenDto) {
-        await this.authService.logout(refreshTokenDto.refreshToken);
+    async logout(
+        @Body() refreshTokenDto: RefreshTokenDto,
+        @CurrentUser() user: JwtPayload,
+        @Req() req: Request,
+    ) {
+        await this.authService.logout(
+            refreshTokenDto.refreshToken,
+            user.sub,
+            user.username,
+            user.role,
+            req,
+        );
     }
 
     /**
@@ -282,8 +293,13 @@ export class AuthController {
     @UseGuards(JwtAuthGuard)
     @Post('logout-all')
     @HttpCode(HttpStatus.NO_CONTENT)
-    async logoutAll(@CurrentUser() user: JwtPayload) {
-        await this.authService.logoutAllDevices(user.sub);
+    async logoutAll(@CurrentUser() user: JwtPayload, @Req() req: Request) {
+        await this.authService.logoutAllDevices(
+            user.sub,
+            user.username,
+            user.role,
+            req,
+        );
     }
 
     /**
@@ -366,11 +382,13 @@ export class AuthController {
     async changePassword(
         @CurrentUser() user: JwtPayload,
         @Body() changePasswordDto: ChangePasswordDto,
+        @Req() req: Request,
     ) {
         await this.authService.changePassword(
             user.sub,
             changePasswordDto.currentPassword,
             changePasswordDto.newPassword,
+            req,
         );
     }
 }
