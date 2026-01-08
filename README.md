@@ -1,98 +1,202 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# NestJS RESTful API Template
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Production-ready REST API built with NestJS, Prisma, PostgreSQL, and JWT authentication. Includes comprehensive audit logging (SOC2-ready), security middleware, performance optimization, and complete documentation.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+**Total LOC**: ~12,000 | **Tech**: NestJS 11, TypeScript, PostgreSQL, Prisma | **Status**: Production-ready
 
-## Description
+## Quick Start
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### Prerequisites
+- Node.js 18+ and npm/yarn
+- PostgreSQL 13+
+- Docker (optional)
 
-## Project setup
+### Installation
 
 ```bash
-$ npm install
+git clone <repo>
+npm install
+cp .env.example .env
+npx prisma migrate dev
+npm run start:dev
 ```
 
-## Compile and run the project
+### Test the API
 
 ```bash
-# development
-$ npm run start
+# Unit tests
+npm run test
 
-# watch mode
-$ npm run start:dev
+# E2E tests
+npm run test:e2e
 
-# production mode
-$ npm run start:prod
+# With coverage
+npm run test:cov
 ```
 
-## Run tests
+## Key Features
+
+### Authentication & Authorization
+- JWT-based auth (access: 15m, refresh: 7d)
+- Session tracking with revocation support
+- Role-based access control (ADMIN/USER)
+- Password security via bcrypt (12 rounds)
+
+### Audit Logging (SOC2 Type II)
+- Non-blocking async audit trail
+- 16 action types, 11 resource types
+- Sensitive data masking (3 strategies)
+- 90-day retention with auto-cleanup
+- Query API with filtering, pagination, CSV/JSON export
+
+### Infrastructure
+- 8 interceptors (logging, caching, retry, circuit breaker)
+- 5 middleware layers (CORS, security, compression, rate limiting)
+- 9 pipes for validation & transformation
+- Global exception handling with standardized responses
+- Structured logging with Winston
+
+### Security
+- OWASP Top 10 mitigations
+- Helmet security headers
+- Input validation & sanitization
+- SQL injection protection via Prisma
+- Rate limiting (configurable per-IP, per-endpoint)
+
+## Project Structure
+
+```
+src/
+├── auth/              # Authentication, JWT, sessions (~2.3K LOC)
+├── audit/             # SOC2 audit logging (~3.7K LOC)
+├── core/              # Infrastructure, interceptors, pipes (~3.3K LOC)
+├── common/            # Database, config, utilities (~2.7K LOC)
+└── main.ts
+
+docs/                  # Comprehensive documentation
+├── project-overview-pdr.md      # Features & requirements
+├── code-standards.md            # Patterns & conventions
+├── system-architecture.md       # Module design & flows
+└── codebase-summary.md          # File structure breakdown
+```
+
+## API Endpoints
+
+### Authentication
+- `POST /auth/register` - Register new user
+- `POST /auth/login` - Login with email/password
+- `POST /auth/refresh` - Refresh JWT token
+- `POST /auth/logout` - Logout and revoke session
+- `GET /auth/profile` - Get current user
+- `POST /auth/change-password` - Change password
+
+### Audit Logs (ADMIN only)
+- `GET /audit?filters...` - Query audit logs with filters
+- `GET /audit/export?format=csv|json` - Export logs
+
+## Response Format
+
+All endpoints return standardized responses:
+
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Success",
+  "data": {},
+  "timestamp": "2024-01-07T17:30:00Z",
+  "path": "/auth/login"
+}
+```
+
+## Configuration
+
+Environment-based via `.env`. See `.env.example` for all options (50+ variables across 10 config sections):
+- app (port, nodeEnv, version)
+- security (corsOrigins, rateLimiting)
+- jwt (tokenExpiry, secrets)
+- database (url, ssl)
+- audit (retention, masking level)
+- logging, caching, and more
+
+## Development
 
 ```bash
-# unit tests
-$ npm run test
+# Start in dev mode (watch)
+npm run start:dev
 
-# e2e tests
-$ npm run test:e2e
+# Build
+npm run build
 
-# test coverage
-$ npm run test:cov
+# Production
+npm run start:prod
+
+# Code quality
+npm run lint        # ESLint
+npm run format      # Prettier
+
+# Database
+npm run db:migrate  # Run migrations
+npm run db:seed     # Seed sample data
+npm run db:studio   # Prisma Studio UI
+```
+
+## Database Schema
+
+### User
+```
+id (UUID), email (unique), username (unique), password (hashed),
+firstName, lastName, role (ADMIN/USER), isActive, emailVerified,
+createdAt, updatedAt
+```
+
+### UserSession
+```
+id (UUID), userId (FK), refreshToken (unique), expiresAt, revokedAt,
+userAgent, ipAddress, createdAt, updatedAt
+```
+
+### AuditLog
+```
+id (UUID), timestamp, userId (FK, nullable), action, resource, method,
+endpoint, statusCode, changesBefore, changesAfter, metadata (JSON),
+createdAt
+```
+
+## Testing
+
+```bash
+npm run test              # Jest unit tests
+npm run test:watch       # Watch mode
+npm run test:e2e         # E2E tests
+npm run test:cov         # Coverage report (target: 80%+)
 ```
 
 ## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Docker
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+docker build -t api .
+docker run -e DATABASE_URL="postgresql://..." -p 3000:3000 api
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Environment
 
-## Resources
+Ensure these in production:
+- `NODE_ENV=production`
+- `JWT_SECRET` (strong, random)
+- `DATABASE_URL` (PostgreSQL connection)
+- `CORS_ORIGINS` (whitelisted domains)
+- `LOG_LEVEL=warn` (reduce noise)
 
-Check out a few resources that may come in handy when working with NestJS:
+## Documentation
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- **[Project Overview & PDR](./docs/project-overview-pdr.md)** - Complete feature list, tech stack, requirements, architecture summary
+- **[Code Standards](./docs/code-standards.md)** - Naming conventions, design patterns, security best practices
+- **[System Architecture](./docs/system-architecture.md)** - Module interactions, request flow, database design
+- **[Codebase Summary](./docs/codebase-summary.md)** - File structure, LOC breakdown, dependencies
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+MIT
