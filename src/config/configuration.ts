@@ -156,8 +156,8 @@ export default (): Configuration => {
         },
 
         performance: {
-            requestTimeout: env.REQUEST_TIMEOUT!,
-            cacheTtl: env.CACHE_TTL!,
+            requestTimeout: Number(env.REQUEST_TIMEOUT) || 30000,
+            cacheTtl: Number(env.CACHE_TTL) || 300000,
         },
 
         database: {

@@ -6,7 +6,10 @@
       "Bash(mkdir:*)",
       "Bash(find:*)",
       "Bash(ls:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git add:*)",
+      "Bash(awk:*)"
     ],
     "deny": [
       "Bash(rm ~/)",

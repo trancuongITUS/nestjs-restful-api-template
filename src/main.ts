@@ -5,7 +5,24 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { AppLogger } from './common/utils/logger.util';
 import { ConfigService } from './config';
-import { HTTP_STATUS, ERROR_CODE, REGEX_PATTERN } from './common/constants';
+import { HTTP_STATUS, ERROR_CODE } from './common/constants';
+
+/**
+ * Parse file size string (e.g., "10mb", "1gb") to bytes
+ */
+function parseFileSize(size: string): number {
+    const units: Record<string, number> = {
+        b: 1,
+        kb: 1024,
+        mb: 1024 * 1024,
+        gb: 1024 * 1024 * 1024,
+    };
+    const match = size.toLowerCase().match(/^(\d+(?:\.\d+)?)\s*(b|kb|mb|gb)?$/);
+    if (!match) return 0;
+    const value = parseFloat(match[1]);
+    const unit = match[2] || 'b';
+    return Math.floor(value * units[unit]);
+}
 
 async function bootstrap(): Promise<void> {
     // Create NestJS application with custom logger
@@ -81,21 +98,17 @@ async function bootstrap(): Promise<void> {
     // CORS configuration (handled by CorsMiddleware in AppModule)
     // Security headers (handled by SecurityMiddleware in AppModule)
     // Request size limiting
+    const maxSizeBytes = parseFileSize(configService.security.maxRequestSize);
     app.use((req: Request, res: Response, next: NextFunction) => {
-        const maxSize = configService.security.maxRequestSize;
         const contentLength = req.headers['content-length'];
-        if (
-            contentLength &&
-            parseInt(contentLength) >
-                parseInt(maxSize.replace(REGEX_PATTERN.NUMERIC_ONLY, ''))
-        ) {
+        if (contentLength && parseInt(contentLength) > maxSizeBytes) {
             return res.status(HTTP_STATUS.PAYLOAD_TOO_LARGE).json({
                 success: false,
                 statusCode: HTTP_STATUS.PAYLOAD_TOO_LARGE,
                 message: 'Request entity too large',
                 error: {
                     code: ERROR_CODE.PAYLOAD_TOO_LARGE,
-                    details: `Request size exceeds the maximum allowed size of ${maxSize}`,
+                    details: `Request size exceeds the maximum allowed size of ${configService.security.maxRequestSize}`,
                 },
                 timestamp: new Date().toISOString(),
                 path: req.url,
