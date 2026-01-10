@@ -286,7 +286,7 @@ describe('AuditEventListener', () => {
             mockAuditService.createAuditLog.mockResolvedValue(undefined);
 
             await Promise.all(
-                events.map(event => listener.handleAuditLog(event)),
+                events.map((event) => listener.handleAuditLog(event)),
             );
 
             expect(mockAuditService.createAuditLog).toHaveBeenCalledTimes(3);

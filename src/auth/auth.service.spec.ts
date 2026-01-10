@@ -122,8 +122,9 @@ describe('AuthService - Phase 5: Audit Logging', () => {
         service = module.get<AuthService>(AuthService);
         eventEmitter = module.get<EventEmitter2>(EventEmitter2);
         userRepository = module.get<UserRepository>(UserRepository);
-        userSessionRepository =
-            module.get<UserSessionRepository>(UserSessionRepository);
+        userSessionRepository = module.get<UserSessionRepository>(
+            UserSessionRepository,
+        );
         passwordValidationService = module.get<PasswordValidationService>(
             PasswordValidationService,
         );
@@ -220,9 +221,10 @@ describe('AuthService - Phase 5: Audit Logging', () => {
 
             const { password, ...userWithoutPassword } = mockUser;
 
-            jest.spyOn(passwordValidationService, 'validateCredentials').mockResolvedValue(
-                userWithoutPassword,
-            );
+            jest.spyOn(
+                passwordValidationService,
+                'validateCredentials',
+            ).mockResolvedValue(userWithoutPassword);
             jest.spyOn(userRepository, 'update').mockResolvedValue(mockUser);
             jest.spyOn(
                 userSessionRepository,
@@ -261,13 +263,14 @@ describe('AuthService - Phase 5: Audit Logging', () => {
                 password: 'wrongpassword',
             };
 
-            jest.spyOn(passwordValidationService, 'validateCredentials').mockResolvedValue(
-                null,
-            );
+            jest.spyOn(
+                passwordValidationService,
+                'validateCredentials',
+            ).mockResolvedValue(null);
 
-            await expect(
-                service.login(loginDto, mockRequest),
-            ).rejects.toThrow(UnauthorizedException);
+            await expect(service.login(loginDto, mockRequest)).rejects.toThrow(
+                UnauthorizedException,
+            );
             expect(eventEmitter.emit).not.toHaveBeenCalled();
         });
     });
@@ -284,9 +287,10 @@ describe('AuthService - Phase 5: Audit Logging', () => {
                 userSessionRepository,
                 'isSessionValid',
             ).mockResolvedValue(true);
-            jest.spyOn(userSessionRepository, 'revokeSession').mockResolvedValue(
-                undefined,
-            );
+            jest.spyOn(
+                userSessionRepository,
+                'revokeSession',
+            ).mockResolvedValue(undefined);
 
             const newSession = { ...mockSession, id: 'session-456' };
             jest.spyOn(
@@ -324,9 +328,10 @@ describe('AuthService - Phase 5: Audit Logging', () => {
         it('should emit LOGOUT audit event on successful logout', async () => {
             const refreshToken = 'refresh-token-123';
 
-            jest.spyOn(userSessionRepository, 'revokeSession').mockResolvedValue(
-                undefined,
-            );
+            jest.spyOn(
+                userSessionRepository,
+                'revokeSession',
+            ).mockResolvedValue(undefined);
 
             await service.logout(
                 refreshToken,
@@ -360,11 +365,18 @@ describe('AuthService - Phase 5: Audit Logging', () => {
         it('should not emit audit event if userId is not provided', async () => {
             const refreshToken = 'refresh-token-123';
 
-            jest.spyOn(userSessionRepository, 'revokeSession').mockResolvedValue(
-                undefined,
-            );
+            jest.spyOn(
+                userSessionRepository,
+                'revokeSession',
+            ).mockResolvedValue(undefined);
 
-            await service.logout(refreshToken, undefined, undefined, undefined, mockRequest);
+            await service.logout(
+                refreshToken,
+                undefined,
+                undefined,
+                undefined,
+                mockRequest,
+            );
 
             expect(eventEmitter.emit).not.toHaveBeenCalled();
         });
@@ -488,9 +500,10 @@ describe('AuthService - Phase 5: Audit Logging', () => {
 
             const { password, ...userWithoutPassword } = mockUser;
 
-            jest.spyOn(passwordValidationService, 'validateCredentials').mockResolvedValue(
-                userWithoutPassword,
-            );
+            jest.spyOn(
+                passwordValidationService,
+                'validateCredentials',
+            ).mockResolvedValue(userWithoutPassword);
             jest.spyOn(userRepository, 'update').mockResolvedValue(mockUser);
             jest.spyOn(
                 userSessionRepository,
@@ -522,9 +535,10 @@ describe('AuthService - Phase 5: Audit Logging', () => {
 
             const { password, ...userWithoutPassword } = mockUser;
 
-            jest.spyOn(passwordValidationService, 'validateCredentials').mockResolvedValue(
-                userWithoutPassword,
-            );
+            jest.spyOn(
+                passwordValidationService,
+                'validateCredentials',
+            ).mockResolvedValue(userWithoutPassword);
             jest.spyOn(userRepository, 'update').mockResolvedValue(mockUser);
             jest.spyOn(
                 userSessionRepository,

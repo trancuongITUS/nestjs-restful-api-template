@@ -248,7 +248,10 @@ describe('AuditInterceptor', () => {
         });
 
         it('should identify SESSION resource', (done) => {
-            const context = createMockExecutionContext('DELETE', '/api/session/123');
+            const context = createMockExecutionContext(
+                'DELETE',
+                '/api/session/123',
+            );
             const next = createMockCallHandler();
 
             interceptor.intercept(context, next).subscribe(() => {
@@ -315,7 +318,7 @@ describe('AuditInterceptor', () => {
                 'PUT',
                 '/api/users/123',
             );
-            const request = mockContext.switchToHttp().getRequest() as any;
+            const request = mockContext.switchToHttp().getRequest();
             request.params = { id: '123' };
             const next = createMockCallHandler();
 

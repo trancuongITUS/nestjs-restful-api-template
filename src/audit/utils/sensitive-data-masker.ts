@@ -104,7 +104,9 @@ export class SensitiveDataMasker {
 
         // Arrays - recursively mask each element
         if (Array.isArray(data)) {
-            return data.map(item => this.maskSensitiveData(item, options)) as any;
+            return data.map((item) =>
+                this.maskSensitiveData(item, options),
+            ) as any;
         }
 
         // Objects - create masked copy
@@ -156,7 +158,7 @@ export class SensitiveDataMasker {
         patterns: string[],
     ): boolean {
         const lowerFieldName = fieldName.toLowerCase();
-        return patterns.some(pattern =>
+        return patterns.some((pattern) =>
             lowerFieldName.includes(pattern.toLowerCase()),
         );
     }

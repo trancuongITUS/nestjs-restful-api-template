@@ -270,7 +270,7 @@ describe('SensitiveDataMasker', () => {
             const data = {
                 name: 'John Doe',
                 salary: 75000,
-                wage: 25.50,
+                wage: 25.5,
                 creditCard: '4111-1111-1111-1111',
                 cvv: '123',
                 bankAccount: '1234567890',

@@ -304,7 +304,8 @@ describe('AuditController', () => {
                 limit: 50,
             };
 
-            const csvData = 'ID,Timestamp,User,Action,Resource,Method,Endpoint,Status,IP Address\n';
+            const csvData =
+                'ID,Timestamp,User,Action,Resource,Method,Endpoint,Status,IP Address\n';
 
             mockQueryService.exportToCsv.mockResolvedValue(csvData);
 
@@ -338,7 +339,9 @@ describe('AuditController', () => {
             const result = await controller.exportJson(queryDto);
 
             expect(result).toEqual(jsonData);
-            expect(mockQueryService.exportToJson).toHaveBeenCalledWith(queryDto);
+            expect(mockQueryService.exportToJson).toHaveBeenCalledWith(
+                queryDto,
+            );
             expect(mockQueryService.exportToJson).toHaveBeenCalledTimes(1);
         });
 

@@ -32,10 +32,7 @@ function parseArgs(): CleanupOptions {
 
     args.forEach((arg) => {
         if (arg.startsWith('--retention-days=')) {
-            options.retentionDays = parseInt(
-                arg.split('=')[1],
-                10,
-            );
+            options.retentionDays = parseInt(arg.split('=')[1], 10);
         } else if (arg === '--dry-run') {
             options.dryRun = true;
         }
@@ -140,7 +137,9 @@ async function cleanupOldAuditLogs(): Promise<void> {
         const duration = Date.now() - startTime;
 
         console.log('\n='.repeat(60));
-        console.log(`✅ Successfully deleted ${result.count.toLocaleString()} audit logs`);
+        console.log(
+            `✅ Successfully deleted ${result.count.toLocaleString()} audit logs`,
+        );
         console.log(`   Duration: ${duration}ms`);
         console.log('='.repeat(60));
 

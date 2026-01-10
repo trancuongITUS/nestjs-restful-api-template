@@ -9,7 +9,15 @@
       "Bash(wc:*)",
       "Bash(npx tsc:*)",
       "Bash(git add:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(where:*)",
+      "Skill(backend-development)",
+      "Skill(code-review)",
+      "Skill(databases)",
+      "WebSearch",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run test:*)"
     ],
     "deny": [
       "Bash(rm ~/)",

@@ -29,8 +29,11 @@ lerna-debug.log*
 # workspace
 nestjs-restful-api-template.code-workspace
 nul
-repomix-output.xml
 /generated/prisma
 
 # ck
 /plans
+repomix-output.xml
+
+# Test
+/coverage

@@ -159,10 +159,7 @@ export class AuditInterceptor implements NestInterceptor {
     /**
      * Extract resource ID from request or response
      */
-    private extractResourceId(
-        request: Request,
-        data: any,
-    ): string | undefined {
+    private extractResourceId(request: Request, data: any): string | undefined {
         // Check params first (e.g., /users/:id)
         if (request.params?.id) return request.params.id;
 
