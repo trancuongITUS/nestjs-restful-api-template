@@ -219,7 +219,9 @@ export class AuthService {
         try {
             // Verify refresh token
             this.jwtService.verify<RefreshTokenPayload>(refreshToken, {
-                secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
+                secret: this.configService.getOrThrow<string>(
+                    'JWT_REFRESH_SECRET',
+                ),
             });
 
             // Find session and user
