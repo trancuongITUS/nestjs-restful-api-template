@@ -219,7 +219,7 @@ export class AuthService {
         try {
             // Verify refresh token
             this.jwtService.verify<RefreshTokenPayload>(refreshToken, {
-                secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+                secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
             });
 
             // Find session and user
@@ -369,7 +369,9 @@ export class AuthService {
 
         const [accessToken, refreshToken] = await Promise.all([
             this.jwtService.signAsync(jwtPayload, {
-                secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+                secret: this.configService.getOrThrow<string>(
+                    'JWT_ACCESS_SECRET',
+                ),
                 expiresIn: this.configService.get<string>(
                     'JWT_ACCESS_EXPIRES_IN',
                     '15m',
@@ -378,7 +380,7 @@ export class AuthService {
             this.jwtService.signAsync(
                 { sub: user.id },
                 {
-                    secret: this.configService.get<string>(
+                    secret: this.configService.getOrThrow<string>(
                         'JWT_REFRESH_SECRET',
                     ),
                     expiresIn: this.configService.get<string>(

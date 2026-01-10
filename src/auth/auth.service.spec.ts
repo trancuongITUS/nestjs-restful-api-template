@@ -82,6 +82,21 @@ describe('AuthService - Phase 5: Audit Logging', () => {
                             };
                             return config[key] || null;
                         }),
+                        getOrThrow: jest.fn((key: string) => {
+                            const config = {
+                                JWT_ACCESS_SECRET: 'access-secret',
+                                JWT_REFRESH_SECRET: 'refresh-secret',
+                                JWT_ACCESS_EXPIRES_IN: '15m',
+                                JWT_REFRESH_EXPIRES_IN: '7d',
+                            };
+                            const value = config[key];
+                            if (!value) {
+                                throw new Error(
+                                    `Configuration key ${key} is not defined`,
+                                );
+                            }
+                            return value;
+                        }),
                     },
                 },
                 {

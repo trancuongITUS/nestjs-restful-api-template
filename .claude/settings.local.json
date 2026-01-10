@@ -17,7 +17,15 @@
       "WebSearch",
       "Bash(npm run build:*)",
       "Bash(npm run lint)",
-      "Bash(npm run test:*)"
+      "Bash(npm run test:*)",
+      "Skill(plan:fast)",
+      "Skill(planning)",
+      "Bash(node:*)",
+      "Bash(npm test:*)",
+      "Bash(npx eslint:*)",
+      "Bash(cat:*)",
+      "Bash(npm run test:cov:*)",
+      "Bash(npm run lint:*)"
     ],
     "deny": [
       "Bash(rm ~/)",
