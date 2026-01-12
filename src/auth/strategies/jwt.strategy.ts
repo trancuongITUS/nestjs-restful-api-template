@@ -44,6 +44,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             }
         }
 
+        // Check if tokens were revoked (logout)
+        if (user.lastTokenIssuedAt && payload.iat) {
+            const revokedAtTimestamp = Math.floor(
+                user.lastTokenIssuedAt.getTime() / 1000,
+            );
+            if (revokedAtTimestamp > payload.iat) {
+                throw new UnauthorizedException(
+                    'Session has been revoked. Please login again',
+                );
+            }
+        }
+
         return {
             sub: payload.sub,
             email: payload.email,

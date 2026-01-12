@@ -15,6 +15,7 @@ import { UserSessionRepository } from '../database/repositories/user-session.rep
 import { PasswordValidationService } from './services/password-validation.service';
 import { AuditAction, AuditResource } from '../audit/enums';
 import * as securityUtil from '../common/utils/security.util';
+import { UserRole } from '@prisma/client';
 
 describe('AuthService - Phase 5: Audit Logging', () => {
     let service: AuthService;
@@ -29,7 +30,7 @@ describe('AuthService - Phase 5: Audit Logging', () => {
         username: 'testuser',
         firstName: 'Test',
         lastName: 'User',
-        role: 'USER',
+        role: UserRole.USER,
         password: 'hashedPassword',
         isActive: true,
         emailVerified: false,
@@ -37,6 +38,11 @@ describe('AuthService - Phase 5: Audit Logging', () => {
         updatedAt: new Date(),
         lastLoginAt: null,
         passwordChangedAt: null,
+        lastTokenIssuedAt: null,
+        failedLoginAttempts: 0,
+        lastFailedLoginAt: null,
+        lockedUntil: null,
+        emailVerifiedAt: null,
     };
 
     const mockSession = {
@@ -45,8 +51,13 @@ describe('AuthService - Phase 5: Audit Logging', () => {
         refreshToken: 'refresh-token-123',
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         createdAt: new Date(),
-        updatedAt: new Date(),
         revokedAt: null,
+        userAgent: 'test-agent',
+        ipAddress: '192.168.1.1',
+    };
+
+    const mockSessionWithUser = {
+        ...mockSession,
         user: mockUser,
     };
 
@@ -297,7 +308,7 @@ describe('AuthService - Phase 5: Audit Logging', () => {
             jest.spyOn(
                 userSessionRepository,
                 'findByRefreshTokenWithUser',
-            ).mockResolvedValue(mockSession);
+            ).mockResolvedValue(mockSessionWithUser);
             jest.spyOn(
                 userSessionRepository,
                 'isSessionValid',
@@ -305,7 +316,7 @@ describe('AuthService - Phase 5: Audit Logging', () => {
             jest.spyOn(
                 userSessionRepository,
                 'revokeSession',
-            ).mockResolvedValue(undefined);
+            ).mockResolvedValue(mockSession);
 
             const newSession = { ...mockSession, id: 'session-456' };
             jest.spyOn(
@@ -346,7 +357,8 @@ describe('AuthService - Phase 5: Audit Logging', () => {
             jest.spyOn(
                 userSessionRepository,
                 'revokeSession',
-            ).mockResolvedValue(undefined);
+            ).mockResolvedValue(mockSession);
+            jest.spyOn(userRepository, 'update').mockResolvedValue(mockUser);
 
             await service.logout(
                 refreshToken,
@@ -383,7 +395,7 @@ describe('AuthService - Phase 5: Audit Logging', () => {
             jest.spyOn(
                 userSessionRepository,
                 'revokeSession',
-            ).mockResolvedValue(undefined);
+            ).mockResolvedValue(mockSession);
 
             await service.logout(
                 refreshToken,
@@ -395,6 +407,29 @@ describe('AuthService - Phase 5: Audit Logging', () => {
 
             expect(eventEmitter.emit).not.toHaveBeenCalled();
         });
+
+        it('should update lastTokenIssuedAt on logout to invalidate access tokens', async () => {
+            const refreshToken = 'refresh-token-123';
+
+            jest.spyOn(
+                userSessionRepository,
+                'revokeSession',
+            ).mockResolvedValue(mockSession);
+            jest.spyOn(userRepository, 'update').mockResolvedValue(mockUser);
+
+            await service.logout(
+                refreshToken,
+                mockUser.id,
+                mockUser.username,
+                mockUser.role,
+                mockRequest,
+            );
+
+            expect(userRepository.update).toHaveBeenCalledWith(
+                { id: mockUser.id },
+                expect.objectContaining({ lastTokenIssuedAt: expect.any(Date) }),
+            );
+        });
     });
 
     describe('logoutAllDevices() - LOGOUT audit event (all devices)', () => {
@@ -402,7 +437,8 @@ describe('AuthService - Phase 5: Audit Logging', () => {
             jest.spyOn(
                 userSessionRepository,
                 'revokeAllUserSessions',
-            ).mockResolvedValue(undefined);
+            ).mockResolvedValue({ count: 1 });
+            jest.spyOn(userRepository, 'update').mockResolvedValue(mockUser);
 
             await service.logoutAllDevices(
                 mockUser.id,
@@ -431,6 +467,26 @@ describe('AuthService - Phase 5: Audit Logging', () => {
                 }),
             );
         });
+
+        it('should update lastTokenIssuedAt on logoutAllDevices to invalidate access tokens', async () => {
+            jest.spyOn(
+                userSessionRepository,
+                'revokeAllUserSessions',
+            ).mockResolvedValue({ count: 1 });
+            jest.spyOn(userRepository, 'update').mockResolvedValue(mockUser);
+
+            await service.logoutAllDevices(
+                mockUser.id,
+                mockUser.username,
+                mockUser.role,
+                mockRequest,
+            );
+
+            expect(userRepository.update).toHaveBeenCalledWith(
+                { id: mockUser.id },
+                expect.objectContaining({ lastTokenIssuedAt: expect.any(Date) }),
+            );
+        });
     });
 
     describe('changePassword() - CHANGE_PASSWORD audit event', () => {
@@ -446,7 +502,7 @@ describe('AuthService - Phase 5: Audit Logging', () => {
             jest.spyOn(
                 userSessionRepository,
                 'revokeAllUserSessions',
-            ).mockResolvedValue(undefined);
+            ).mockResolvedValue({ count: 1 });
 
             await service.changePassword(
                 mockUser.id,

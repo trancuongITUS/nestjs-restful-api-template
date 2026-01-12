@@ -26,7 +26,9 @@
       "Bash(cat:*)",
       "Bash(npm run test:cov:*)",
       "Bash(npm run lint:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx prisma migrate:*)"
     ],
     "deny": [
       "Bash(rm ~/)",

@@ -8,6 +8,7 @@ import {
     UnauthorizedException,
     ConflictException,
     BadRequestException,
+    Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -35,6 +36,8 @@ import { AuditAction, AuditResource } from '../audit/enums';
 
 @Injectable()
 export class AuthService {
+    private readonly logger = new Logger(AuthService.name);
+
     constructor(
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
@@ -300,6 +303,18 @@ export class AuthService {
         try {
             await this.userSessionRepository.revokeSession(refreshToken);
 
+            // Invalidate all access tokens by updating timestamp
+            if (userId) {
+                await this.userRepository.update(
+                    { id: userId },
+                    { lastTokenIssuedAt: new Date() },
+                );
+            } else {
+                this.logger.warn(
+                    'Logout called without userId - access tokens will remain valid until expiry',
+                );
+            }
+
             // Emit audit event
             if (req && userId) {
                 this.emitAuditEvent({
@@ -319,8 +334,11 @@ export class AuthService {
                     },
                 });
             }
-        } catch {
-            // Silent fail - token might already be revoked
+        } catch (error) {
+            // Log error but don't fail - token might already be revoked
+            this.logger.warn(
+                `Logout failed for user ${userId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            );
         }
     }
 
@@ -334,6 +352,12 @@ export class AuthService {
         req?: Request,
     ): Promise<void> {
         await this.userSessionRepository.revokeAllUserSessions(userId);
+
+        // Invalidate all access tokens
+        await this.userRepository.update(
+            { id: userId },
+            { lastTokenIssuedAt: new Date() },
+        );
 
         // Emit audit event
         if (req) {
