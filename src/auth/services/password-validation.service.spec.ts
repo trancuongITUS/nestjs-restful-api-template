@@ -80,8 +80,11 @@ describe('PasswordValidationService', () => {
     });
 
     describe('validateCredentials', () => {
-        it('should return null for non-existent user', async () => {
+        it('should return null for non-existent user but still perform password comparison', async () => {
             userRepository.findByEmail.mockResolvedValue(null);
+            (securityUtil.comparePassword as jest.Mock).mockResolvedValue(
+                false,
+            );
 
             const result = await service.validateCredentials(
                 'unknown@example.com',
@@ -89,16 +92,19 @@ describe('PasswordValidationService', () => {
             );
 
             expect(result).toBeNull();
+            // CRITICAL: Verify bcrypt comparison was performed for timing safety
+            expect(securityUtil.comparePassword).toHaveBeenCalledTimes(1);
             expect(
                 userRepository.incrementFailedLoginAttempts,
             ).not.toHaveBeenCalled();
         });
 
-        it('should return null for inactive user', async () => {
+        it('should return null for inactive user after performing password comparison', async () => {
             userRepository.findByEmail.mockResolvedValue({
                 ...mockUser,
                 isActive: false,
             });
+            (securityUtil.comparePassword as jest.Mock).mockResolvedValue(true);
 
             const result = await service.validateCredentials(
                 'test@example.com',
@@ -106,11 +112,14 @@ describe('PasswordValidationService', () => {
             );
 
             expect(result).toBeNull();
+            // Verify comparison still happened for timing safety
+            expect(securityUtil.comparePassword).toHaveBeenCalledTimes(1);
             expect(userRepository.getAccountLockStatus).not.toHaveBeenCalled();
         });
 
         it('should throw UnauthorizedException for locked account and emit audit event', async () => {
             userRepository.findByEmail.mockResolvedValue(mockUser);
+            (securityUtil.comparePassword as jest.Mock).mockResolvedValue(true);
             userRepository.getAccountLockStatus.mockReturnValue({
                 isLocked: true,
                 lockedUntil: new Date(Date.now() + 900000),
@@ -265,6 +274,9 @@ describe('PasswordValidationService', () => {
 
         it('should not track attempts for non-existent user', async () => {
             userRepository.findByEmail.mockResolvedValue(null);
+            (securityUtil.comparePassword as jest.Mock).mockResolvedValue(
+                false,
+            );
 
             await service.validateCredentials(
                 'unknown@example.com',
@@ -275,6 +287,61 @@ describe('PasswordValidationService', () => {
                 userRepository.incrementFailedLoginAttempts,
             ).not.toHaveBeenCalled();
             expect(userRepository.lockAccount).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('timing attack prevention', () => {
+        it('should call comparePassword for both existing and non-existing users', async () => {
+            // Test 1: Non-existent user
+            userRepository.findByEmail.mockResolvedValue(null);
+            (securityUtil.comparePassword as jest.Mock).mockResolvedValue(
+                false,
+            );
+
+            await service.validateCredentials(
+                'unknown@example.com',
+                'password',
+            );
+            expect(securityUtil.comparePassword).toHaveBeenCalledTimes(1);
+
+            jest.clearAllMocks();
+
+            // Test 2: Existing user
+            userRepository.findByEmail.mockResolvedValue(mockUser);
+            userRepository.getAccountLockStatus.mockReturnValue({
+                isLocked: false,
+                lockedUntil: null,
+                remainingMs: 0,
+            });
+            (securityUtil.comparePassword as jest.Mock).mockResolvedValue(
+                false,
+            );
+            userRepository.incrementFailedLoginAttempts.mockResolvedValue({
+                ...mockUser,
+                failedLoginAttempts: 1,
+            });
+
+            await service.validateCredentials('test@example.com', 'password');
+            expect(securityUtil.comparePassword).toHaveBeenCalledTimes(1);
+        });
+
+        it('should use dummy hash when user not found', async () => {
+            userRepository.findByEmail.mockResolvedValue(null);
+            (securityUtil.comparePassword as jest.Mock).mockResolvedValue(
+                false,
+            );
+
+            await service.validateCredentials(
+                'unknown@example.com',
+                'password',
+            );
+
+            // Verify comparePassword called with dummy hash (second argument)
+            const callArgs = (securityUtil.comparePassword as jest.Mock).mock
+                .calls[0];
+            expect(callArgs[0]).toBe('password');
+            // Second arg should be the dummy hash (starts with $2b$12$)
+            expect(callArgs[1]).toMatch(/^\$2b\$12\$/);
         });
     });
 });

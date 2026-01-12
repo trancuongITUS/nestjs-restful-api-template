@@ -15,6 +15,7 @@ import {
 import {
     AUTH,
     AUTH_ERROR_MESSAGES,
+    TIMING_SAFE_DUMMY_HASH,
 } from '../../common/constants/security.constants';
 import { AuditAction, AuditResource } from '../../audit/enums';
 
@@ -28,6 +29,7 @@ export class PasswordValidationService {
     /**
      * Validate user credentials by email and password
      * Implements brute-force protection with account lockout
+     * Uses constant-time comparison to prevent timing attacks
      */
     async validateCredentials(
         email: string,
@@ -35,12 +37,18 @@ export class PasswordValidationService {
     ): Promise<Omit<User, 'password'> | null> {
         const user = await this.userRepository.findByEmail(email);
 
-        // User not found - return null (don't track non-existent accounts)
+        // TIMING ATTACK PREVENTION:
+        // Always perform bcrypt comparison to maintain constant-time response
+        // Use user's hash if exists, dummy hash if not
+        const hashToCompare = user?.password ?? TIMING_SAFE_DUMMY_HASH;
+        const isPasswordValid = await comparePassword(password, hashToCompare);
+
+        // User not found - return null after constant-time comparison
         if (!user) {
             return null;
         }
 
-        // Check if account is inactive
+        // Check if account is inactive (after timing-safe comparison)
         if (!user.isActive) {
             return null;
         }
@@ -70,9 +78,7 @@ export class PasswordValidationService {
             throw new UnauthorizedException(AUTH_ERROR_MESSAGES.ACCOUNT_LOCKED);
         }
 
-        // Validate password
-        const isPasswordValid = await comparePassword(password, user.password);
-
+        // Check password validity (comparison already done above)
         if (!isPasswordValid) {
             // Increment failed attempts
             const updatedUser =
@@ -96,7 +102,8 @@ export class PasswordValidationService {
                     method: 'POST',
                     endpoint: '/auth/login',
                     statusCode: 401,
-                    errorMessage: 'Account locked due to exceeded failed login attempts',
+                    errorMessage:
+                        'Account locked due to exceeded failed login attempts',
                     metadata: {
                         email,
                         failedAttempts: updatedUser.failedLoginAttempts,

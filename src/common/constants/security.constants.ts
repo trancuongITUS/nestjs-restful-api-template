@@ -113,6 +113,19 @@ export const AUTH = {
 } as const;
 
 // =============================================================================
+// TIMING ATTACK PREVENTION
+// =============================================================================
+
+/**
+ * Pre-computed dummy hash for timing attack prevention
+ * Used when user doesn't exist to maintain constant response time
+ * Generated with: bcrypt.hashSync('timing_safe_dummy_password', 12)
+ * MUST match AUTH.BCRYPT_SALT_ROUNDS (12)
+ */
+export const TIMING_SAFE_DUMMY_HASH =
+    '$2b$12$ohHKsWif1h7saCw2etOXMOzoI49/NnRa6jspH/Mc6.2a7m/gtBFAa';
+
+// =============================================================================
 // AUTHENTICATION ERROR MESSAGES
 // =============================================================================
 

@@ -25,7 +25,8 @@
       "Bash(npx eslint:*)",
       "Bash(cat:*)",
       "Bash(npm run test:cov:*)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(git log:*)"
     ],
     "deny": [
       "Bash(rm ~/)",
