@@ -65,7 +65,9 @@ describe('JwtStrategy', () => {
 
     describe('validate()', () => {
         it('should return payload for valid active user', async () => {
-            jest.spyOn(userRepository, 'findUnique').mockResolvedValue(mockUser);
+            jest.spyOn(userRepository, 'findUnique').mockResolvedValue(
+                mockUser,
+            );
 
             const payload: JwtPayload = {
                 sub: 'user-123',
@@ -138,7 +140,9 @@ describe('JwtStrategy', () => {
             };
 
             await expect(strategy.validate(payload)).rejects.toThrow(
-                new UnauthorizedException('Password was changed. Please login again'),
+                new UnauthorizedException(
+                    'Password was changed. Please login again',
+                ),
             );
         });
 
@@ -160,7 +164,9 @@ describe('JwtStrategy', () => {
             };
 
             await expect(strategy.validate(payload)).rejects.toThrow(
-                new UnauthorizedException('Session has been revoked. Please login again'),
+                new UnauthorizedException(
+                    'Session has been revoked. Please login again',
+                ),
             );
         });
 
@@ -186,7 +192,9 @@ describe('JwtStrategy', () => {
         });
 
         it('should allow token when lastTokenIssuedAt is null (never logged out)', async () => {
-            jest.spyOn(userRepository, 'findUnique').mockResolvedValue(mockUser);
+            jest.spyOn(userRepository, 'findUnique').mockResolvedValue(
+                mockUser,
+            );
 
             const payload: JwtPayload = {
                 sub: 'user-123',
@@ -201,7 +209,9 @@ describe('JwtStrategy', () => {
         });
 
         it('should allow token when passwordChangedAt is null (password never changed)', async () => {
-            jest.spyOn(userRepository, 'findUnique').mockResolvedValue(mockUser);
+            jest.spyOn(userRepository, 'findUnique').mockResolvedValue(
+                mockUser,
+            );
 
             const payload: JwtPayload = {
                 sub: 'user-123',

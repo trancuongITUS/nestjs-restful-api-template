@@ -427,7 +427,9 @@ describe('AuthService - Phase 5: Audit Logging', () => {
 
             expect(userRepository.update).toHaveBeenCalledWith(
                 { id: mockUser.id },
-                expect.objectContaining({ lastTokenIssuedAt: expect.any(Date) }),
+                expect.objectContaining({
+                    lastTokenIssuedAt: expect.any(Date),
+                }),
             );
         });
     });
@@ -484,7 +486,9 @@ describe('AuthService - Phase 5: Audit Logging', () => {
 
             expect(userRepository.update).toHaveBeenCalledWith(
                 { id: mockUser.id },
-                expect.objectContaining({ lastTokenIssuedAt: expect.any(Date) }),
+                expect.objectContaining({
+                    lastTokenIssuedAt: expect.any(Date),
+                }),
             );
         });
     });
