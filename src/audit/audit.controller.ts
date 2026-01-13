@@ -11,7 +11,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Response } from 'express';
 import { AuditQueryService } from './audit-query.service';
 import { AuditQueryDto } from './dto';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { Roles, JwtAuthGuard, RolesGuard } from '../auth';
 import { UserRole } from '@prisma/client';
 
 /**
@@ -22,6 +22,7 @@ import { UserRole } from '@prisma/client';
 @Controller('audit')
 @ApiTags('Audit Logs')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class AuditController {
     constructor(private readonly auditQueryService: AuditQueryService) {}
