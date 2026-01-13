@@ -43,7 +43,7 @@ export class AuditInterceptor implements NestInterceptor {
             ipAddress: this.getClientIp(request),
             userAgent: request.headers['user-agent'],
             requestId: request.headers['x-request-id'] as string,
-            userId: (request.user as any)?.id,
+            userId: (request.user as any)?.sub,
             username: (request.user as any)?.username,
             userRole: (request.user as any)?.role,
             sessionId: this.getSessionId(request),

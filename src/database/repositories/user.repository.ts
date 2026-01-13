@@ -160,4 +160,69 @@ export class UserRepository extends BaseRepository<
     async updateRole(id: string, role: 'ADMIN' | 'USER'): Promise<User> {
         return this.update({ id }, { role });
     }
+
+    /**
+     * Increment failed login attempts atomically
+     * Also updates lastFailedLoginAt timestamp
+     */
+    async incrementFailedLoginAttempts(id: string): Promise<User> {
+        return this.prisma.user.update({
+            where: { id },
+            data: {
+                failedLoginAttempts: { increment: 1 },
+                lastFailedLoginAt: new Date(),
+            },
+        });
+    }
+
+    /**
+     * Reset failed login attempts after successful login
+     * Clears lockout state
+     */
+    async resetFailedLoginAttempts(id: string): Promise<User> {
+        return this.prisma.user.update({
+            where: { id },
+            data: {
+                failedLoginAttempts: 0,
+                lastFailedLoginAt: null,
+                lockedUntil: null,
+            },
+        });
+    }
+
+    /**
+     * Lock account for specified duration
+     * @param id - User ID
+     * @param durationMs - Lock duration in milliseconds
+     */
+    async lockAccount(id: string, durationMs: number): Promise<User> {
+        const lockedUntil = new Date(Date.now() + durationMs);
+        return this.prisma.user.update({
+            where: { id },
+            data: { lockedUntil },
+        });
+    }
+
+    /**
+     * Get account lock status
+     * Returns lock state and remaining time if locked
+     */
+    getAccountLockStatus(user: User): {
+        isLocked: boolean;
+        lockedUntil: Date | null;
+        remainingMs: number;
+    } {
+        const now = Date.now();
+        const lockedUntil = user.lockedUntil;
+
+        if (!lockedUntil) {
+            return { isLocked: false, lockedUntil: null, remainingMs: 0 };
+        }
+
+        const lockedUntilMs = lockedUntil.getTime();
+        const isLocked = lockedUntilMs > now;
+        const remainingMs = isLocked ? lockedUntilMs - now : 0;
+
+        return { isLocked, lockedUntil, remainingMs };
+    }
 }

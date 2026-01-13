@@ -265,7 +265,7 @@ describe('AuditInterceptor', () => {
     describe('audit event structure', () => {
         it('should capture user context', (done) => {
             const user = {
-                id: 'user-123',
+                sub: 'user-123', // JWT payload uses 'sub' for user ID
                 username: 'john.doe',
                 role: 'ADMIN',
                 sessionId: 'session-123',

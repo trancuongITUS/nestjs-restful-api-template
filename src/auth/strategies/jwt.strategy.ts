@@ -7,7 +7,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { UserRepository } from '../../database/repositories/user.repository';
-import { JwtPayload } from '../interfaces/auth.interface';
+import { JwtTokenPayload, JwtPayload } from '../interfaces/auth.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -18,16 +18,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
-            secretOrKey:
-                configService.get<string>('JWT_ACCESS_SECRET') ||
-                'default-access-secret-key-for-development',
+            secretOrKey: configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
         });
     }
 
     /**
-     * Validate JWT payload and return user data
+     * Validate JWT payload and return enriched user data
+     * PII (email, username) is fetched from database, NOT from token
      */
-    async validate(payload: JwtPayload): Promise<JwtPayload> {
+    async validate(payload: JwtTokenPayload): Promise<JwtPayload> {
         const user = await this.userRepository.findUnique({ id: payload.sub });
 
         if (!user || !user.isActive) {
@@ -46,11 +45,24 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             }
         }
 
+        // Check if tokens were revoked (logout)
+        if (user.lastTokenIssuedAt && payload.iat) {
+            const revokedAtTimestamp = Math.floor(
+                user.lastTokenIssuedAt.getTime() / 1000,
+            );
+            if (revokedAtTimestamp > payload.iat) {
+                throw new UnauthorizedException(
+                    'Session has been revoked. Please login again',
+                );
+            }
+        }
+
+        // Return enriched payload with PII from database (not from token)
         return {
             sub: payload.sub,
-            email: payload.email,
-            username: payload.username,
             role: payload.role,
+            email: user.email,
+            username: user.username,
         };
     }
 }
