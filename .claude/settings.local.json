@@ -29,7 +29,11 @@
       "Bash(git log:*)",
       "Bash(npx prisma generate:*)",
       "Bash(npx prisma migrate:*)",
-      "Skill(fix:fast)"
+      "Skill(fix:fast)",
+      "Bash(.claudeskills.venvScriptspython.exe .claude/scripts/generate_catalogs.py --skills)",
+      "Bash(\".claude\\\\skills\\\\.venv\\\\Scripts\\\\python.exe\" .claude/scripts/generate_catalogs.py --skills)",
+      "Skill(debugging)",
+      "Skill(problem-solving)"
     ],
     "deny": [
       "Bash(rm ~/)",

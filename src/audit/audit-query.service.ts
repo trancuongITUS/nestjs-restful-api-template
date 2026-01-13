@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma, AuditLog } from '@prisma/client';
 import { AuditRepository } from './repositories';
 import { AuditQueryDto } from './dto';
+import { sanitizeAndEscapeCsvField } from './utils';
 
 /**
  * Paginated Result Interface
@@ -95,18 +96,20 @@ export class AuditQueryService {
         ];
 
         const rows = items.map((log) => [
-            log.id,
-            log.timestamp.toISOString(),
-            log.username || 'Anonymous',
-            log.action,
-            log.resource,
-            log.method,
-            log.endpoint,
-            log.statusCode.toString(),
-            log.ipAddress || 'Unknown',
+            sanitizeAndEscapeCsvField(log.id),
+            sanitizeAndEscapeCsvField(log.timestamp.toISOString()),
+            sanitizeAndEscapeCsvField(log.username || 'Anonymous'),
+            sanitizeAndEscapeCsvField(log.action),
+            sanitizeAndEscapeCsvField(log.resource),
+            sanitizeAndEscapeCsvField(log.method),
+            sanitizeAndEscapeCsvField(log.endpoint),
+            sanitizeAndEscapeCsvField(log.statusCode.toString()),
+            sanitizeAndEscapeCsvField(log.ipAddress || 'Unknown'),
         ]);
 
-        return [headers, ...rows].map((row) => row.join(',')).join('\n');
+        return [headers.map(sanitizeAndEscapeCsvField), ...rows]
+            .map((row) => row.join(','))
+            .join('\n');
     }
 
     /**
