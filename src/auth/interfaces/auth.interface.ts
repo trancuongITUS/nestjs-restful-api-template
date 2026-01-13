@@ -4,13 +4,24 @@
 
 import type { UserRole } from '@prisma/client';
 
-export interface JwtPayload {
+/**
+ * JWT token payload (stored in token) - contains only non-PII data
+ * PII (email, username) should NOT be stored in JWT tokens
+ */
+export interface JwtTokenPayload {
     sub: string; // User ID
-    email: string;
-    username: string;
     role: UserRole;
     iat?: number;
     exp?: number;
+}
+
+/**
+ * Enriched user context (after DB lookup during validation)
+ * Contains PII fetched from database, NOT stored in token
+ */
+export interface JwtPayload extends JwtTokenPayload {
+    email: string;
+    username: string;
 }
 
 export interface AuthTokens {

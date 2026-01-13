@@ -18,7 +18,7 @@ import type { Request } from 'express';
 import { UserRepository } from '../database/repositories/user.repository';
 import { UserSessionRepository } from '../database/repositories/user-session.repository';
 import {
-    JwtPayload,
+    JwtTokenPayload,
     AuthTokens,
     LoginResponse,
     RefreshTokenPayload,
@@ -384,12 +384,12 @@ export class AuthService {
      * Generate JWT access and refresh tokens
      */
     private async generateTokens(
-        user: Pick<User, 'id' | 'email' | 'username' | 'role'>,
+        user: Pick<User, 'id' | 'role'>,
     ): Promise<AuthTokens> {
-        const jwtPayload: JwtPayload = {
+        // JWT payload contains only non-PII data (sub, role)
+        // PII (email, username) is fetched from DB during token validation
+        const jwtPayload: JwtTokenPayload = {
             sub: user.id,
-            email: user.email,
-            username: user.username,
             role: user.role,
         };
 
