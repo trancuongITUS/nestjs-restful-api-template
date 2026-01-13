@@ -4,6 +4,7 @@
  */
 
 import { Injectable } from '@nestjs/common';
+import { Prisma, UserSession } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 
 @Injectable()
@@ -161,5 +162,53 @@ export class UserSessionRepository {
             expired: expiredCount,
             revoked: totalCount - activeCount - expiredCount,
         };
+    }
+
+    /**
+     * Find session by refresh token with exclusive row lock for atomic operations.
+     * Uses FOR UPDATE NOWAIT to prevent race conditions during token refresh.
+     * Must be called within a transaction context.
+     * @throws Error if row is already locked (concurrent request)
+     */
+    async findByRefreshTokenForUpdate(
+        refreshToken: string,
+        tx: Prisma.TransactionClient,
+    ): Promise<UserSession | null> {
+        const sessions = await tx.$queryRaw<UserSession[]>`
+            SELECT * FROM "user_sessions"
+            WHERE "refresh_token" = ${refreshToken}
+            FOR UPDATE NOWAIT
+        `;
+        return sessions[0] || null;
+    }
+
+    /**
+     * Atomically rotate session: revoke old token and create new session.
+     * Must be called within a transaction context after acquiring lock.
+     */
+    async rotateSession(
+        oldToken: string,
+        userId: string,
+        newToken: string,
+        expiresAt: Date,
+        userAgent: string | undefined,
+        ipAddress: string | undefined,
+        tx: Prisma.TransactionClient,
+    ): Promise<UserSession> {
+        // Revoke old session
+        await tx.userSession.update({
+            where: { refreshToken: oldToken },
+            data: { revokedAt: new Date() },
+        });
+        // Create new session
+        return tx.userSession.create({
+            data: {
+                userId,
+                refreshToken: newToken,
+                expiresAt,
+                userAgent,
+                ipAddress,
+            },
+        });
     }
 }

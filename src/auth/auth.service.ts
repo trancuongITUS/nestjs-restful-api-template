@@ -17,6 +17,7 @@ import type { User } from '@prisma/client';
 import type { Request } from 'express';
 import { UserRepository } from '../database/repositories/user.repository';
 import { UserSessionRepository } from '../database/repositories/user-session.repository';
+import { PrismaService } from '../database/prisma.service';
 import {
     JwtTokenPayload,
     AuthTokens,
@@ -45,6 +46,7 @@ export class AuthService {
         private readonly userRepository: UserRepository,
         private readonly userSessionRepository: UserSessionRepository,
         private readonly passwordValidationService: PasswordValidationService,
+        private readonly prisma: PrismaService,
     ) {}
 
     /**
@@ -213,81 +215,114 @@ export class AuthService {
     }
 
     /**
-     * Refresh access token using refresh token
+     * Refresh access token using refresh token.
+     * Uses atomic transaction with row-level lock to prevent race conditions (TOCTOU).
+     * Concurrent requests with same token: first succeeds, others get 401.
      */
     async refreshToken(
         refreshToken: string,
         req?: Request,
     ): Promise<AuthTokens> {
         try {
-            // Verify refresh token
+            // Verify JWT signature first (fast fail before DB transaction)
             this.jwtService.verify<RefreshTokenPayload>(refreshToken, {
                 secret: this.configService.getOrThrow<string>(
                     'JWT_REFRESH_SECRET',
                 ),
             });
-
-            // Find session and user
-            const session =
-                await this.userSessionRepository.findByRefreshTokenWithUser(
-                    refreshToken,
-                );
-
-            if (!session || !session.user.isActive) {
-                throw new UnauthorizedException(
-                    AUTH_ERROR_MESSAGES.INVALID_REFRESH_TOKEN,
-                );
-            }
-
-            // Check if session is valid
-            const isValid =
-                await this.userSessionRepository.isSessionValid(refreshToken);
-            if (!isValid) {
-                throw new UnauthorizedException(
-                    AUTH_ERROR_MESSAGES.REFRESH_TOKEN_EXPIRED,
-                );
-            }
-
-            // Generate new tokens
-            const tokens = await this.generateTokens(session.user);
-
-            // Update session with new refresh token
-            await this.userSessionRepository.revokeSession(refreshToken);
-            const newRefreshTokenExpiry = getRefreshTokenExpiry();
-            const newSession = await this.userSessionRepository.createSession(
-                session.user.id,
-                tokens.refreshToken,
-                newRefreshTokenExpiry,
-            );
-
-            // Emit audit event
-            if (req) {
-                this.emitAuditEvent({
-                    userId: session.user.id,
-                    username: session.user.username,
-                    userRole: session.user.role,
-                    action: AuditAction.REFRESH_TOKEN,
-                    resource: AuditResource.AUTH,
-                    resourceId: session.user.id,
-                    method: 'POST',
-                    endpoint: '/auth/refresh',
-                    ipAddress: this.getClientIp(req),
-                    userAgent: req.headers['user-agent'],
-                    sessionId: newSession.id,
-                    statusCode: 200,
-                    metadata: {
-                        oldSessionId: session.id,
-                        newSessionId: newSession.id,
-                    },
-                });
-            }
-
-            return tokens;
         } catch {
             throw new UnauthorizedException(
                 AUTH_ERROR_MESSAGES.INVALID_REFRESH_TOKEN,
             );
         }
+
+        // Atomic transaction with row-level lock prevents race condition
+        const result = await this.prisma.executeTransaction(
+            async (tx) => {
+                // 1. Lock & fetch session (exclusive lock via FOR UPDATE NOWAIT)
+                const session =
+                    await this.userSessionRepository.findByRefreshTokenForUpdate(
+                        refreshToken,
+                        tx,
+                    );
+
+                // 2. Validate inside transaction (now atomic)
+                if (!session) {
+                    throw new UnauthorizedException(
+                        AUTH_ERROR_MESSAGES.INVALID_REFRESH_TOKEN,
+                    );
+                }
+
+                if (session.revokedAt || session.expiresAt < new Date()) {
+                    throw new UnauthorizedException(
+                        AUTH_ERROR_MESSAGES.REFRESH_TOKEN_EXPIRED,
+                    );
+                }
+
+                // 3. Fetch user (separate query to avoid lock on users table)
+                const user = await this.userRepository.findUnique({
+                    id: session.userId,
+                });
+
+                if (!user || !user.isActive) {
+                    throw new UnauthorizedException(
+                        AUTH_ERROR_MESSAGES.INVALID_REFRESH_TOKEN,
+                    );
+                }
+
+                // 4. Generate new tokens
+                const tokens = await this.generateTokens(user);
+                const newExpiry = getRefreshTokenExpiry();
+
+                // 5. Atomic rotation (all within same transaction)
+                const newSession =
+                    await this.userSessionRepository.rotateSession(
+                        refreshToken,
+                        user.id,
+                        tokens.refreshToken,
+                        newExpiry,
+                        req?.headers['user-agent'],
+                        this.getClientIp(req),
+                        tx,
+                    );
+
+                return {
+                    tokens,
+                    user,
+                    oldSessionId: session.id,
+                    newSession,
+                };
+            },
+            {
+                isolationLevel: 'ReadCommitted',
+                timeout: 5000,
+                maxWait: 2000,
+            },
+        );
+
+        // 6. Emit audit event (outside transaction for non-blocking)
+        if (req) {
+            this.emitAuditEvent({
+                userId: result.user.id,
+                username: result.user.username,
+                userRole: result.user.role,
+                action: AuditAction.REFRESH_TOKEN,
+                resource: AuditResource.AUTH,
+                resourceId: result.user.id,
+                method: 'POST',
+                endpoint: '/auth/refresh',
+                ipAddress: this.getClientIp(req),
+                userAgent: req.headers['user-agent'],
+                sessionId: result.newSession.id,
+                statusCode: 200,
+                metadata: {
+                    oldSessionId: result.oldSessionId,
+                    newSessionId: result.newSession.id,
+                },
+            });
+        }
+
+        return result.tokens;
     }
 
     /**
@@ -502,7 +537,8 @@ export class AuthService {
     /**
      * Extract client IP address from request
      */
-    private getClientIp(req: Request): string {
+    private getClientIp(req?: Request): string | undefined {
+        if (!req) return undefined;
         return (
             (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
             req.ip ||

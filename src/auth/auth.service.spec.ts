@@ -13,6 +13,7 @@ import { AuthService } from './auth.service';
 import { UserRepository } from '../database/repositories/user.repository';
 import { UserSessionRepository } from '../database/repositories/user-session.repository';
 import { PasswordValidationService } from './services/password-validation.service';
+import { PrismaService } from '../database/prisma.service';
 import { AuditAction, AuditResource } from '../audit/enums';
 import * as securityUtil from '../common/utils/security.util';
 import { UserRole } from '@prisma/client';
@@ -23,6 +24,7 @@ describe('AuthService - Phase 5: Audit Logging', () => {
     let userRepository: UserRepository;
     let userSessionRepository: UserSessionRepository;
     let passwordValidationService: PasswordValidationService;
+    let prismaService: PrismaService;
 
     const mockUser = {
         id: 'user-123',
@@ -131,15 +133,23 @@ describe('AuthService - Phase 5: Audit Logging', () => {
                     useValue: {
                         createSession: jest.fn(),
                         findByRefreshTokenWithUser: jest.fn(),
+                        findByRefreshTokenForUpdate: jest.fn(),
                         isSessionValid: jest.fn(),
                         revokeSession: jest.fn(),
                         revokeAllUserSessions: jest.fn(),
+                        rotateSession: jest.fn(),
                     },
                 },
                 {
                     provide: PasswordValidationService,
                     useValue: {
                         validateCredentials: jest.fn(),
+                    },
+                },
+                {
+                    provide: PrismaService,
+                    useValue: {
+                        executeTransaction: jest.fn((fn) => fn({})),
                     },
                 },
             ],
@@ -154,6 +164,7 @@ describe('AuthService - Phase 5: Audit Logging', () => {
         passwordValidationService = module.get<PasswordValidationService>(
             PasswordValidationService,
         );
+        prismaService = module.get<PrismaService>(PrismaService);
     });
 
     afterEach(() => {
@@ -301,27 +312,28 @@ describe('AuthService - Phase 5: Audit Logging', () => {
         });
     });
 
-    describe('refreshToken() - REFRESH_TOKEN audit event', () => {
+    describe('refreshToken() - REFRESH_TOKEN audit event (atomic transaction)', () => {
         it('should emit REFRESH_TOKEN audit event on successful refresh', async () => {
             const refreshToken = 'refresh-token-123';
-
-            jest.spyOn(
-                userSessionRepository,
-                'findByRefreshTokenWithUser',
-            ).mockResolvedValue(mockSessionWithUser);
-            jest.spyOn(
-                userSessionRepository,
-                'isSessionValid',
-            ).mockResolvedValue(true);
-            jest.spyOn(
-                userSessionRepository,
-                'revokeSession',
-            ).mockResolvedValue(mockSession);
-
             const newSession = { ...mockSession, id: 'session-456' };
+
+            // Mock transaction to execute callback with mock tx client
+            jest.spyOn(prismaService, 'executeTransaction').mockImplementation(
+                async (fn) => {
+                    return fn({} as never);
+                },
+            );
+
             jest.spyOn(
                 userSessionRepository,
-                'createSession',
+                'findByRefreshTokenForUpdate',
+            ).mockResolvedValue(mockSession);
+            jest.spyOn(userRepository, 'findUnique').mockResolvedValue(
+                mockUser,
+            );
+            jest.spyOn(
+                userSessionRepository,
+                'rotateSession',
             ).mockResolvedValue(newSession);
 
             await service.refreshToken(refreshToken, mockRequest);
@@ -347,6 +359,172 @@ describe('AuthService - Phase 5: Audit Logging', () => {
                     }),
                 }),
             );
+        });
+
+        it('should throw UnauthorizedException when session not found (atomic)', async () => {
+            const refreshToken = 'invalid-token';
+
+            jest.spyOn(prismaService, 'executeTransaction').mockImplementation(
+                async (fn) => {
+                    return fn({} as never);
+                },
+            );
+
+            jest.spyOn(
+                userSessionRepository,
+                'findByRefreshTokenForUpdate',
+            ).mockResolvedValue(null);
+
+            await expect(
+                service.refreshToken(refreshToken, mockRequest),
+            ).rejects.toThrow(UnauthorizedException);
+        });
+
+        it('should throw UnauthorizedException when session is revoked', async () => {
+            const refreshToken = 'revoked-token';
+            const revokedSession = { ...mockSession, revokedAt: new Date() };
+
+            jest.spyOn(prismaService, 'executeTransaction').mockImplementation(
+                async (fn) => {
+                    return fn({} as never);
+                },
+            );
+
+            jest.spyOn(
+                userSessionRepository,
+                'findByRefreshTokenForUpdate',
+            ).mockResolvedValue(revokedSession);
+
+            await expect(
+                service.refreshToken(refreshToken, mockRequest),
+            ).rejects.toThrow(UnauthorizedException);
+        });
+
+        it('should throw UnauthorizedException when session is expired', async () => {
+            const refreshToken = 'expired-token';
+            const expiredSession = {
+                ...mockSession,
+                expiresAt: new Date(Date.now() - 1000),
+            };
+
+            jest.spyOn(prismaService, 'executeTransaction').mockImplementation(
+                async (fn) => {
+                    return fn({} as never);
+                },
+            );
+
+            jest.spyOn(
+                userSessionRepository,
+                'findByRefreshTokenForUpdate',
+            ).mockResolvedValue(expiredSession);
+
+            await expect(
+                service.refreshToken(refreshToken, mockRequest),
+            ).rejects.toThrow(UnauthorizedException);
+        });
+
+        it('should throw UnauthorizedException when user is inactive', async () => {
+            const refreshToken = 'valid-token';
+            const inactiveUser = { ...mockUser, isActive: false };
+
+            jest.spyOn(prismaService, 'executeTransaction').mockImplementation(
+                async (fn) => {
+                    return fn({} as never);
+                },
+            );
+
+            jest.spyOn(
+                userSessionRepository,
+                'findByRefreshTokenForUpdate',
+            ).mockResolvedValue(mockSession);
+            jest.spyOn(userRepository, 'findUnique').mockResolvedValue(
+                inactiveUser,
+            );
+
+            await expect(
+                service.refreshToken(refreshToken, mockRequest),
+            ).rejects.toThrow(UnauthorizedException);
+        });
+
+        it('should throw UnauthorizedException when user not found', async () => {
+            const refreshToken = 'valid-token';
+
+            jest.spyOn(prismaService, 'executeTransaction').mockImplementation(
+                async (fn) => {
+                    return fn({} as never);
+                },
+            );
+
+            jest.spyOn(
+                userSessionRepository,
+                'findByRefreshTokenForUpdate',
+            ).mockResolvedValue(mockSession);
+            jest.spyOn(userRepository, 'findUnique').mockResolvedValue(null);
+
+            await expect(
+                service.refreshToken(refreshToken, mockRequest),
+            ).rejects.toThrow(UnauthorizedException);
+        });
+
+        it('should use correct transaction options for isolation', async () => {
+            const refreshToken = 'refresh-token-123';
+            const newSession = { ...mockSession, id: 'session-456' };
+
+            const executeTransactionSpy = jest
+                .spyOn(prismaService, 'executeTransaction')
+                .mockImplementation(async (fn) => {
+                    return fn({} as never);
+                });
+
+            jest.spyOn(
+                userSessionRepository,
+                'findByRefreshTokenForUpdate',
+            ).mockResolvedValue(mockSession);
+            jest.spyOn(userRepository, 'findUnique').mockResolvedValue(
+                mockUser,
+            );
+            jest.spyOn(
+                userSessionRepository,
+                'rotateSession',
+            ).mockResolvedValue(newSession);
+
+            await service.refreshToken(refreshToken, mockRequest);
+
+            expect(executeTransactionSpy).toHaveBeenCalledWith(
+                expect.any(Function),
+                expect.objectContaining({
+                    isolationLevel: 'ReadCommitted',
+                    timeout: 5000,
+                    maxWait: 2000,
+                }),
+            );
+        });
+
+        it('should not emit audit event when request is not provided', async () => {
+            const refreshToken = 'refresh-token-123';
+            const newSession = { ...mockSession, id: 'session-456' };
+
+            jest.spyOn(prismaService, 'executeTransaction').mockImplementation(
+                async (fn) => {
+                    return fn({} as never);
+                },
+            );
+
+            jest.spyOn(
+                userSessionRepository,
+                'findByRefreshTokenForUpdate',
+            ).mockResolvedValue(mockSession);
+            jest.spyOn(userRepository, 'findUnique').mockResolvedValue(
+                mockUser,
+            );
+            jest.spyOn(
+                userSessionRepository,
+                'rotateSession',
+            ).mockResolvedValue(newSession);
+
+            await service.refreshToken(refreshToken);
+
+            expect(eventEmitter.emit).not.toHaveBeenCalled();
         });
     });
 
