@@ -26,7 +26,7 @@ export class PrismaUniqueConstraintException extends PrismaException {
     constructor(field: string, value: string) {
         super(
             `Record with ${field} '${value}' already exists`,
-            HttpStatus.CONFLICT,
+            HttpStatus.INTERNAL_SERVER_ERROR,
         );
     }
 }
