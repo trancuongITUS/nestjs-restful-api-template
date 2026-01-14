@@ -13,6 +13,7 @@ import {
     ValidationError,
 } from '../../common/types/api-response.type';
 import { HTTP_STATUS, ENVIRONMENT, ERROR_CODE } from '../../common/constants';
+import { formatValidationErrors } from '../../common/utils';
 
 /**
  * Global exception filter that catches all HTTP exceptions and formats them
@@ -77,7 +78,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
                 // Handle validation errors from class-validator
                 if (responseObj.message && Array.isArray(responseObj.message)) {
-                    validationErrors = this.formatValidationErrors(
+                    validationErrors = formatValidationErrors(
                         responseObj.message as ClassValidatorError[],
                     );
                     message = 'Validation failed';
@@ -137,42 +138,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
         };
 
         return statusCodeMap[status] || ERROR_CODE.UNKNOWN_ERROR;
-    }
-
-    /**
-     * Formats class-validator validation errors to our standard format
-     * Now properly typed without eslint-disable comments
-     */
-    private formatValidationErrors(
-        errors: ClassValidatorError[],
-    ): ValidationError[] {
-        const validationErrors: ValidationError[] = [];
-
-        const processError = (
-            error: ClassValidatorError,
-            parentPath = '',
-        ): void => {
-            const field = parentPath
-                ? `${parentPath}.${error.property}`
-                : error.property;
-
-            if (error.constraints) {
-                validationErrors.push({
-                    field,
-                    value: error.value as unknown,
-                    constraints: error.constraints,
-                });
-            }
-
-            if (error.children && error.children.length > 0) {
-                error.children.forEach((child: ClassValidatorError) =>
-                    processError(child, field),
-                );
-            }
-        };
-
-        errors.forEach((error) => processError(error));
-        return validationErrors;
     }
 
     /**
