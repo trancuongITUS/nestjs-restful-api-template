@@ -8,8 +8,6 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { validate, ValidationError } from 'class-validator';
-import { plainToClass } from 'class-transformer';
 import { Request } from 'express';
 import {
     FILE_LIMITS,
@@ -275,43 +273,5 @@ export class ValidationInterceptor implements NestInterceptor {
                 );
             }
         }
-    }
-
-    /**
-     * Validates DTO using class-validator
-     */
-    async validateDto<T>(dto: unknown, dtoClass: new () => T): Promise<T> {
-        if (!dto || !dtoClass) {
-            throw new BadRequestException('Invalid DTO or DTO class');
-        }
-
-        const object = plainToClass(dtoClass, dto as Record<string, unknown>);
-        const errors = await validate(object as object);
-
-        if (errors.length > 0) {
-            const formattedErrors = this.formatValidationErrors(errors);
-            throw new BadRequestException({
-                message: 'Validation failed',
-                error: ERROR_CODE.VALIDATION_ERROR,
-                details: formattedErrors,
-            });
-        }
-
-        return object;
-    }
-
-    /**
-     * Formats validation errors for better readability
-     */
-    private formatValidationErrors(errors: ValidationError[]): any[] {
-        return errors.map((error) => ({
-            property: error.property,
-            value: error.value,
-            constraints: error.constraints,
-            children:
-                error.children && error.children.length > 0
-                    ? this.formatValidationErrors(error.children)
-                    : undefined,
-        }));
     }
 }
