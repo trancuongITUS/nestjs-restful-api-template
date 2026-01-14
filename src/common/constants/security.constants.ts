@@ -3,27 +3,6 @@
  */
 
 // =============================================================================
-// CIRCUIT BREAKER & RETRY CONFIGURATION
-// Note: Basic timeouts and rate limits are now managed by ConfigService
-// =============================================================================
-
-export const CIRCUIT_BREAKER = {
-    // Circuit breaker timeouts
-    RECOVERY_TIME: 60000, // 1 minute
-    MONITORING_WINDOW: 300000, // 5 minutes
-    MAX_CALLS: 3,
-    FAILURE_THRESHOLD: 5,
-} as const;
-
-export const RETRY = {
-    // Retry configuration
-    DEFAULT_MAX_RETRIES: 3,
-    BASE_DELAY: 1000, // 1 second
-    MAX_DELAY: 10000, // 10 seconds
-    JITTER_PERCENT: 0.1, // 10% jitter
-} as const;
-
-// =============================================================================
 // SENSITIVE DATA FIELDS
 // =============================================================================
 
@@ -42,16 +21,6 @@ export const SENSITIVE_FIELDS = [
 // =============================================================================
 
 export const REQUIRED_HEADERS = ['user-agent'] as const;
-
-// =============================================================================
-// CIRCUIT BREAKER STATES
-// =============================================================================
-
-export const CIRCUIT_STATE = {
-    CLOSED: 'CLOSED',
-    OPEN: 'OPEN',
-    HALF_OPEN: 'HALF_OPEN',
-} as const;
 
 // =============================================================================
 // NETWORK ERROR CODES

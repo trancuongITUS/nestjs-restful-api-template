@@ -10,7 +10,7 @@ src/common/constants/
 ├── error.constants.ts        # Error codes and messages
 ├── http.constants.ts         # HTTP status codes, methods, headers
 ├── performance.constants.ts  # Performance thresholds and metrics
-├── security.constants.ts     # Security patterns, circuit breaker, retry
+├── security.constants.ts     # Security patterns, auth settings
 ├── validation.constants.ts   # Validation rules and limits
 ├── index.ts                 # Centralized exports
 └── README.md               # This documentation
@@ -124,27 +124,11 @@ export const HEALTH_STATUS = {
 
 **Security-related constants**
 
-- Circuit breaker configuration (static parameters)
-- Retry logic configuration (static parameters)
 - Sensitive data field patterns
 - Security header names and values
-- Network error codes
+- Authentication settings (bcrypt rounds, token expiry)
 
 ```typescript
-export const CIRCUIT_BREAKER = {
-    RECOVERY_TIME: 60000, // 1 minute
-    MONITORING_WINDOW: 300000, // 5 minutes
-    MAX_CALLS: 3,
-    FAILURE_THRESHOLD: 5,
-} as const;
-
-export const RETRY = {
-    DEFAULT_MAX_RETRIES: 3,
-    BASE_DELAY: 1000, // 1 second
-    MAX_DELAY: 10000, // 10 seconds
-    JITTER_PERCENT: 0.1, // 10% jitter
-} as const;
-
 export const SENSITIVE_FIELDS = [
     'password',
     'token',
@@ -152,6 +136,13 @@ export const SENSITIVE_FIELDS = [
     'apiKey',
     // ... more sensitive fields
 ] as const;
+
+export const AUTH = {
+    BCRYPT_SALT_ROUNDS: 12,
+    REFRESH_TOKEN_EXPIRY_DAYS: 7,
+    MAX_LOGIN_ATTEMPTS: 5,
+    // ... more auth settings
+} as const;
 ```
 
 ### `validation.constants.ts`
@@ -248,20 +239,16 @@ const rateLimit = this.configService.rateLimit.short.limit;
 const timeout = this.configService.performance.requestTimeout;
 ```
 
-### **Renamed Constants**
+### **Removed Constants (Resilience Patterns)**
 
-Some constants have been reorganized for better clarity:
+Circuit breaker and retry constants were removed as they're only needed for microservices or heavy external integrations:
 
 ```typescript
-// ❌ OLD
-import { TIMEOUT } from '../common/constants';
-const recovery = TIMEOUT.CIRCUIT_BREAKER_RECOVERY;
-const retries = TIMEOUT.DEFAULT_MAX_RETRIES;
-
-// ✅ NEW
+// ❌ REMOVED - Not needed for single-server, DB-only apps
 import { CIRCUIT_BREAKER, RETRY } from '../common/constants';
-const recovery = CIRCUIT_BREAKER.RECOVERY_TIME;
-const retries = RETRY.DEFAULT_MAX_RETRIES;
+
+// ✅ Add back if needed for microservices architecture
+// See: src/core/interceptors/index.ts for guidance
 ```
 
 ## 📋 **Best Practices**
