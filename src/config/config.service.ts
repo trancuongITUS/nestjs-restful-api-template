@@ -17,6 +17,7 @@ import {
     RedisConfig,
     EmailConfig,
     FileStorageConfig,
+    AuditRetentionConfig,
 } from './configuration';
 
 @Injectable()
@@ -108,6 +109,15 @@ export class ConfigService {
     }
 
     /**
+     * Get audit retention configuration
+     */
+    get auditRetention(): AuditRetentionConfig {
+        return this.configService.get<AuditRetentionConfig>('auditRetention', {
+            infer: true,
+        })!;
+    }
+
+    /**
      * Check if a configuration value exists and is not undefined/null
      */
     isDefined(key: keyof Configuration): boolean {
@@ -167,6 +177,7 @@ export class ConfigService {
             redis: this.redis,
             email: this.email,
             fileStorage: this.fileStorage,
+            auditRetention: this.auditRetention,
         };
     }
 

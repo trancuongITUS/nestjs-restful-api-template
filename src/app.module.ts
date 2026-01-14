@@ -22,6 +22,7 @@ import { ConfigModule, ConfigService } from './config';
 import { PrismaModule } from './database';
 import { AuthModule } from './auth/auth.module';
 import { AuditModule } from './audit/audit.module';
+import { TasksModule } from './tasks';
 import { AuditInterceptor } from './audit/interceptors';
 import { GlobalJwtAuthGuard } from './auth/guards/global-jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
@@ -53,6 +54,9 @@ import { TIMEOUT_MS } from './common/constants';
 
         // Audit logging module (must come after EventEmitterModule)
         AuditModule,
+
+        // Scheduled tasks module
+        TasksModule,
 
         // Authentication module
         AuthModule,

