@@ -103,34 +103,36 @@ import { TIMEOUT_MS } from './common/constants';
             provide: APP_FILTER,
             useClass: HttpExceptionFilter,
         },
-        // Global interceptors (order matters - they execute in reverse order)
+        // Global interceptors (order matters - registered in reverse execution order)
+        // Request phase executes bottom-to-top, response phase top-to-bottom
+        // Execution order: Audit → Logging → Timeout → Validation → Caching → Metrics → Transform
         {
             provide: APP_INTERCEPTOR,
-            useClass: AuditInterceptor, // Must be first to capture all requests
+            useClass: TransformInterceptor, // Innermost: transforms response format
         },
         {
             provide: APP_INTERCEPTOR,
-            useClass: LoggingInterceptor,
+            useClass: MetricsInterceptor, // Captures timing after transformation
         },
         {
             provide: APP_INTERCEPTOR,
-            useClass: ValidationInterceptor,
+            useClass: CachingInterceptor, // Check/serve from cache
         },
         {
             provide: APP_INTERCEPTOR,
-            useClass: CachingInterceptor,
+            useClass: ValidationInterceptor, // Validates request before processing
         },
         {
             provide: APP_INTERCEPTOR,
-            useClass: MetricsInterceptor,
+            useClass: TimeoutInterceptor, // Applies timeout protection
         },
         {
             provide: APP_INTERCEPTOR,
-            useClass: TransformInterceptor,
+            useClass: LoggingInterceptor, // Logs request/response including timeouts
         },
         {
             provide: APP_INTERCEPTOR,
-            useClass: TimeoutInterceptor,
+            useClass: AuditInterceptor, // Outermost: captures all requests for audit
         },
         // Global guards (order matters - authentication before authorization)
         {
