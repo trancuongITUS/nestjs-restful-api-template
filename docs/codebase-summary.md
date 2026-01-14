@@ -47,6 +47,14 @@ src/
 │   ├── auth.module.ts                    (~50 LOC)
 │   └── README.md
 │
+├── tasks/                                 (~120 LOC) [Scheduled Tasks Module]
+│   ├── constants/
+│   │   ├── cron-expressions.ts            (~20 LOC)
+│   │   └── index.ts                       (~5 LOC)
+│   ├── audit-retention.task.ts            (~60 LOC)
+│   ├── tasks.module.ts                    (~30 LOC)
+│   └── index.ts                           (~5 LOC)
+│
 ├── audit/                                 (~3,726 LOC) [Audit Logging Module]
 │   ├── controllers/
 │   │   └── audit.controller.ts           (~120 LOC)
@@ -180,6 +188,7 @@ Test Files:
 | Module | LOC | Files | Purpose |
 |--------|-----|-------|---------|
 | **auth** | ~2,300 | 25 | User authentication, JWT, sessions |
+| **tasks** | ~120 | 5 | Scheduled background jobs |
 | **audit** | ~3,726 | 35 | SOC2 audit logging, masking, queries |
 | **core** | ~3,299 | 20 | Interceptors, middlewares, pipes, filters |
 | **common** | ~2,662 | 30 | Database, config, utilities, types |
@@ -188,7 +197,7 @@ Test Files:
 | **Docs** | ~1,500 | 4 | Documentation files |
 | **Tests** | ~2,000 | 20+ | Unit & E2E test specs |
 | **Config** | ~315 | 6 | Environment, eslint, prettier, etc. |
-| **TOTAL** | ~12,000+ | 130+ | Complete project |
+| **TOTAL** | ~12,100+ | 135+ | Complete project |
 
 ---
 
@@ -243,6 +252,19 @@ Test Files:
 - `audit-resources.enum.ts` - 11 resource types (USER, SESSION, etc.)
 - `audit-log.dto.ts` - Response model for audit entries
 - `query-audit.dto.ts` - Query parameters (filters, pagination, sorting)
+
+---
+
+### Tasks Module (src/tasks/)
+
+Centralized scheduled task registry using NestJS Schedule.
+
+| File | Purpose |
+|------|---------|
+| `tasks.module.ts` | ScheduleModule.forRoot() registration |
+| `audit-retention.task.ts` | Weekly audit log cleanup cron |
+| `constants/cron-expressions.ts` | Reusable cron patterns |
+| `index.ts` | Barrel export |
 
 ---
 

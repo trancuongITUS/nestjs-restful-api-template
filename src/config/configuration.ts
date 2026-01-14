@@ -92,6 +92,12 @@ export interface FileStorageConfig {
     allowedFileTypes: string[];
 }
 
+export interface AuditRetentionConfig {
+    enabled: boolean;
+    days: number;
+    cron: string;
+}
+
 export interface Configuration {
     app: AppConfig;
     security: SecurityConfig;
@@ -103,6 +109,7 @@ export interface Configuration {
     redis: RedisConfig;
     email: EmailConfig;
     fileStorage: FileStorageConfig;
+    auditRetention: AuditRetentionConfig;
 }
 
 /**
@@ -202,6 +209,12 @@ export default (): Configuration => {
             allowedFileTypes: env
                 .ALLOWED_FILE_TYPES!.split(',')
                 .map((type) => type.trim()),
+        },
+
+        auditRetention: {
+            enabled: env.AUDIT_RETENTION_ENABLED!,
+            days: env.AUDIT_RETENTION_DAYS!,
+            cron: env.AUDIT_RETENTION_CRON!,
         },
     };
 };

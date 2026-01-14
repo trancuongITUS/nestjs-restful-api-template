@@ -28,7 +28,15 @@
       "Bash(npm run lint:*)",
       "Bash(git log:*)",
       "Bash(npx prisma generate:*)",
-      "Bash(npx prisma migrate:*)"
+      "Bash(npx prisma migrate:*)",
+      "Skill(fix:fast)",
+      "Bash(.claudeskills.venvScriptspython.exe .claude/scripts/generate_catalogs.py --skills)",
+      "Bash(\".claude\\\\skills\\\\.venv\\\\Scripts\\\\python.exe\" .claude/scripts/generate_catalogs.py --skills)",
+      "Skill(debugging)",
+      "Skill(problem-solving)",
+      "Bash(npm install:*)",
+      "Bash(timeout 10 npm run start:dev:*)",
+      "Bash(npx jest:*)"
     ],
     "deny": [
       "Bash(rm ~/)",

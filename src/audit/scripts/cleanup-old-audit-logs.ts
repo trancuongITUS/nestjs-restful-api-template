@@ -1,17 +1,21 @@
 /**
  * Audit Log Retention Cleanup Script
- * Removes audit logs older than the specified retention period (default: 90 days)
+ * CLI script for manual audit log cleanup using shared utility
  *
  * Usage:
  *   npm run audit:cleanup
  *   npm run audit:cleanup -- --retention-days=30
  *   npm run audit:cleanup -- --dry-run
  *
- * Cron Schedule (weekly on Sunday midnight):
- *   0 0 * * 0 npm run audit:cleanup
+ * Note: Automated cleanup is handled by AuditRetentionTask scheduled task.
+ * This script is for manual/one-off cleanups.
  */
 
 import { PrismaClient } from '@prisma/client';
+import {
+    deleteOldAuditLogs,
+    calculateCutoffDate,
+} from '../utils/audit-cleanup.util';
 
 const prisma = new PrismaClient();
 
@@ -26,7 +30,7 @@ interface CleanupOptions {
 function parseArgs(): CleanupOptions {
     const args = process.argv.slice(2);
     const options: CleanupOptions = {
-        retentionDays: 90,
+        retentionDays: parseInt(process.env.AUDIT_RETENTION_DAYS || '90', 10),
         dryRun: false,
     };
 
@@ -42,23 +46,14 @@ function parseArgs(): CleanupOptions {
 }
 
 /**
- * Calculate cutoff date based on retention policy
+ * Main execution function
  */
-function calculateCutoffDate(retentionDays: number): Date {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
-    return cutoffDate;
-}
-
-/**
- * Clean up old audit logs
- */
-async function cleanupOldAuditLogs(): Promise<void> {
+async function main(): Promise<void> {
     const options = parseArgs();
     const cutoffDate = calculateCutoffDate(options.retentionDays);
 
     console.log('='.repeat(60));
-    console.log('Audit Log Retention Cleanup');
+    console.log('Audit Log Retention Cleanup (CLI)');
     console.log('='.repeat(60));
     console.log(`Retention policy: ${options.retentionDays} days`);
     console.log(`Cutoff date: ${cutoffDate.toISOString()}`);
@@ -66,122 +61,33 @@ async function cleanupOldAuditLogs(): Promise<void> {
     console.log('='.repeat(60));
 
     try {
-        // Count audit logs to be deleted
-        const countToDelete = await prisma.auditLog.count({
-            where: {
-                timestamp: {
-                    lt: cutoffDate,
-                },
-            },
+        const result = await deleteOldAuditLogs(prisma, {
+            retentionDays: options.retentionDays,
+            dryRun: options.dryRun,
         });
 
-        console.log(
-            `\nAudit logs to delete: ${countToDelete.toLocaleString()}`,
-        );
-
-        if (countToDelete === 0) {
-            console.log('\n✅ No audit logs to delete.');
-            return;
-        }
-
-        // Get sample of oldest logs
-        const oldestLogs = await prisma.auditLog.findMany({
-            where: {
-                timestamp: {
-                    lt: cutoffDate,
-                },
-            },
-            orderBy: {
-                timestamp: 'asc',
-            },
-            take: 5,
-            select: {
-                id: true,
-                timestamp: true,
-                action: true,
-                resource: true,
-                username: true,
-            },
-        });
-
-        console.log('\nSample of oldest logs to be deleted:');
-        oldestLogs.forEach((log) => {
-            console.log(
-                `  - ${log.timestamp.toISOString()} | ${log.action} | ${log.resource} | ${log.username || 'Anonymous'}`,
-            );
-        });
-
+        console.log('\n' + '='.repeat(60));
         if (options.dryRun) {
-            console.log('\n⚠️  DRY RUN MODE - No logs were deleted.');
             console.log(
-                `   Run without --dry-run flag to delete ${countToDelete} logs.`,
+                `DRY RUN: Would delete ${result.countToDelete.toLocaleString()} audit logs`,
             );
-            return;
+        } else if (result.deletedCount > 0) {
+            console.log(
+                `✅ Deleted ${result.deletedCount.toLocaleString()} audit logs`,
+            );
+        } else {
+            console.log('✅ No audit logs to delete');
         }
-
-        // Confirm deletion
-        console.log('\n⚠️  WARNING: This action is irreversible!');
-        console.log(
-            `   ${countToDelete} audit logs will be permanently deleted.`,
-        );
-
-        // Delete old audit logs
-        const startTime = Date.now();
-        const result = await prisma.auditLog.deleteMany({
-            where: {
-                timestamp: {
-                    lt: cutoffDate,
-                },
-            },
-        });
-        const duration = Date.now() - startTime;
-
-        console.log('\n='.repeat(60));
-        console.log(
-            `✅ Successfully deleted ${result.count.toLocaleString()} audit logs`,
-        );
-        console.log(`   Duration: ${duration}ms`);
+        console.log(`Duration: ${result.durationMs}ms`);
         console.log('='.repeat(60));
 
-        // Show remaining audit logs
+        // Show remaining count
         const remainingCount = await prisma.auditLog.count();
         console.log(
             `\nRemaining audit logs: ${remainingCount.toLocaleString()}`,
         );
-
-        // Show oldest remaining log
-        const oldestRemaining = await prisma.auditLog.findFirst({
-            orderBy: {
-                timestamp: 'asc',
-            },
-            select: {
-                timestamp: true,
-            },
-        });
-
-        if (oldestRemaining) {
-            const ageInDays = Math.floor(
-                (Date.now() - oldestRemaining.timestamp.getTime()) /
-                    (1000 * 60 * 60 * 24),
-            );
-            console.log(
-                `Oldest remaining log: ${oldestRemaining.timestamp.toISOString()} (${ageInDays} days old)`,
-            );
-        }
     } catch (error) {
-        console.error('\n❌ Error during cleanup:', error);
-        throw error;
-    }
-}
-
-/**
- * Main execution
- */
-async function main() {
-    try {
-        await cleanupOldAuditLogs();
-    } catch (error) {
-        console.error('Fatal error:', error);
+        console.error('Cleanup failed:', error);
         process.exit(1);
     } finally {
         await prisma.$disconnect();
@@ -190,7 +96,11 @@ async function main() {
 
 // Run if executed directly
 if (require.main === module) {
-    main();
+    void main();
 }
 
-export { cleanupOldAuditLogs, calculateCutoffDate };
+// Re-export from shared utility for backwards compatibility
+export {
+    deleteOldAuditLogs,
+    calculateCutoffDate,
+} from '../utils/audit-cleanup.util';

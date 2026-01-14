@@ -70,6 +70,11 @@ export interface EnvironmentVariables {
     UPLOAD_DEST?: string;
     MAX_FILE_SIZE?: string;
     ALLOWED_FILE_TYPES?: string;
+
+    // Audit Retention (optional - for scheduled cleanup)
+    AUDIT_RETENTION_ENABLED?: boolean;
+    AUDIT_RETENTION_DAYS?: number;
+    AUDIT_RETENTION_CRON?: string;
 }
 
 export const validationSchema = Joi.object<EnvironmentVariables>({
@@ -265,4 +270,22 @@ export const validationSchema = Joi.object<EnvironmentVariables>({
     ALLOWED_FILE_TYPES: Joi.string()
         .default('image/jpeg,image/png,image/gif,application/pdf')
         .description('Comma-separated list of allowed file MIME types'),
+
+    // Audit Retention - Optional with defaults
+    AUDIT_RETENTION_ENABLED: Joi.boolean()
+        .default(true)
+        .description('Enable/disable audit log retention cleanup'),
+
+    AUDIT_RETENTION_DAYS: Joi.number()
+        .integer()
+        .min(1)
+        .max(3650)
+        .default(90)
+        .description('Number of days to retain audit logs'),
+
+    AUDIT_RETENTION_CRON: Joi.string()
+        .default('0 0 * * 0')
+        .description(
+            'Cron expression for retention cleanup (default: weekly Sunday midnight)',
+        ),
 });
