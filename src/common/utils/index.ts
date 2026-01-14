@@ -16,3 +16,6 @@ export * from './logger.util';
 
 // Security utilities
 export * from './security.util';
+
+// Validation error formatting
+export * from './validation-error-formatter.util';

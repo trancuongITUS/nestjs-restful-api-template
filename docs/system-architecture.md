@@ -121,7 +121,7 @@ GET /audit/export?format=csv
 
 **Components**:
 
-**Interceptors (8)**:
+**Interceptors (6)**:
 | Interceptor | Purpose | Order |
 |-------------|---------|-------|
 | LoggingInterceptor | Logs request/response with timing | 1st |
@@ -129,9 +129,9 @@ GET /audit/export?format=csv
 | ValidationInterceptor | Re-validates before sending | 3rd |
 | TimeoutInterceptor | Enforces per-endpoint timeout (default 30s) | 4th |
 | CachingInterceptor | In-memory cache for GET requests (TTL-based) | 5th |
-| RetryInterceptor | Exponential backoff (max 3 attempts) for transient errors | 6th |
-| MetricsInterceptor | Tracks request count, latency, error rate | 7th |
-| CircuitBreakerInterceptor | Prevent cascade failures (open/closed/half-open) | 8th |
+| MetricsInterceptor | Tracks request count, latency, error rate | 6th |
+
+> **Note**: For microservices or heavy external integrations, consider adding RetryInterceptor (exponential backoff) and CircuitBreakerInterceptor (cascade failure prevention).
 
 **Middlewares (5)**:
 | Middleware | Purpose | Ordering |

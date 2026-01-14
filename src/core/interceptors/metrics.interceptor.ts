@@ -4,10 +4,13 @@ import {
     ExecutionContext,
     CallHandler,
     Logger,
+    OnModuleInit,
+    OnModuleDestroy,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { Request, Response } from 'express';
+import * as os from 'os';
 import {
     HTTP_STATUS,
     PERFORMANCE,
@@ -30,12 +33,36 @@ interface EndpointMetrics {
     [endpoint: string]: RequestMetrics;
 }
 
+interface SystemMetrics {
+    memory: {
+        heapUsed: number;
+        heapTotal: number;
+        rss: number;
+        external: number;
+        heapUsedPercent: number;
+    };
+    cpu: {
+        user: number;
+        system: number;
+        percentUsed: number;
+    };
+    eventLoop: {
+        lag: number;
+        lagMs: number;
+    };
+    uptime: number;
+    timestamp: number;
+}
+
 /**
  * Performance metrics interceptor for monitoring API performance
- * Tracks request counts, response times, and error rates
+ * Tracks request counts, response times, error rates, and system metrics
+ * (memory, CPU, event loop lag)
  */
 @Injectable()
-export class MetricsInterceptor implements NestInterceptor {
+export class MetricsInterceptor
+    implements NestInterceptor, OnModuleInit, OnModuleDestroy
+{
     private readonly logger = new Logger(MetricsInterceptor.name);
     private readonly metrics: EndpointMetrics = {};
     private readonly globalMetrics: RequestMetrics = {
@@ -48,6 +75,117 @@ export class MetricsInterceptor implements NestInterceptor {
         errorCount: 0,
         statusCodes: {},
     };
+
+    // System metrics tracking
+    private systemMetrics: SystemMetrics = this.createEmptySystemMetrics();
+    private lastCpuUsage = process.cpuUsage();
+    private lastCpuTime = Date.now();
+    private eventLoopLagTimer: ReturnType<typeof setInterval> | null = null;
+    private systemMetricsTimer: ReturnType<typeof setInterval> | null = null;
+
+    private createEmptySystemMetrics(): SystemMetrics {
+        return {
+            memory: {
+                heapUsed: 0,
+                heapTotal: 0,
+                rss: 0,
+                external: 0,
+                heapUsedPercent: 0,
+            },
+            cpu: { user: 0, system: 0, percentUsed: 0 },
+            eventLoop: { lag: 0, lagMs: 0 },
+            uptime: 0,
+            timestamp: Date.now(),
+        };
+    }
+
+    onModuleInit(): void {
+        this.startSystemMetricsCollection();
+        this.logger.log('System metrics collection started');
+    }
+
+    onModuleDestroy(): void {
+        this.stopSystemMetricsCollection();
+        this.logger.log('System metrics collection stopped');
+    }
+
+    private startSystemMetricsCollection(): void {
+        // Collect system metrics at configured interval
+        this.systemMetricsTimer = setInterval(() => {
+            this.collectSystemMetrics();
+        }, PERFORMANCE.SYSTEM_METRICS_INTERVAL);
+
+        // Measure event loop lag at configured interval
+        this.eventLoopLagTimer = setInterval(() => {
+            this.measureEventLoopLag();
+        }, PERFORMANCE.EVENT_LOOP_LAG_INTERVAL);
+
+        // Initial collection
+        this.collectSystemMetrics();
+    }
+
+    private stopSystemMetricsCollection(): void {
+        if (this.systemMetricsTimer) {
+            clearInterval(this.systemMetricsTimer);
+            this.systemMetricsTimer = null;
+        }
+        if (this.eventLoopLagTimer) {
+            clearInterval(this.eventLoopLagTimer);
+            this.eventLoopLagTimer = null;
+        }
+    }
+
+    private collectSystemMetrics(): void {
+        // Memory metrics
+        const memUsage = process.memoryUsage();
+        this.systemMetrics.memory = {
+            heapUsed: memUsage.heapUsed,
+            heapTotal: memUsage.heapTotal,
+            rss: memUsage.rss,
+            external: memUsage.external,
+            heapUsedPercent: (memUsage.heapUsed / memUsage.heapTotal) * 100,
+        };
+
+        // CPU metrics
+        const currentCpuUsage = process.cpuUsage(this.lastCpuUsage);
+        const currentTime = Date.now();
+        const elapsedMs = currentTime - this.lastCpuTime;
+
+        if (elapsedMs > 0) {
+            // Convert microseconds to milliseconds and calculate percentage
+            const userMs = currentCpuUsage.user / 1000;
+            const systemMs = currentCpuUsage.system / 1000;
+            const totalCpuMs = userMs + systemMs;
+            // Calculate CPU percentage relative to elapsed time and number of CPUs
+            const numCpus = os.cpus().length;
+            const percentUsed = (totalCpuMs / (elapsedMs * numCpus)) * 100;
+
+            this.systemMetrics.cpu = {
+                user: userMs,
+                system: systemMs,
+                percentUsed: Math.min(percentUsed, 100),
+            };
+        }
+
+        this.lastCpuUsage = process.cpuUsage();
+        this.lastCpuTime = currentTime;
+
+        // Uptime
+        this.systemMetrics.uptime = process.uptime();
+        this.systemMetrics.timestamp = Date.now();
+    }
+
+    private measureEventLoopLag(): void {
+        const start = process.hrtime.bigint();
+        setImmediate(() => {
+            const lag = process.hrtime.bigint() - start;
+            const lagNs = Number(lag);
+            this.systemMetrics.eventLoop = {
+                lag: lagNs,
+                lagMs: lagNs / 1_000_000,
+            };
+        });
+    }
 
     intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
         const startTime = Date.now();
@@ -157,7 +295,7 @@ export class MetricsInterceptor implements NestInterceptor {
     }
 
     /**
-     * Logs performance metrics summary
+     * Logs performance metrics summary including system metrics
      */
     private logPerformanceMetrics(): void {
         const errorRate =
@@ -173,6 +311,18 @@ export class MetricsInterceptor implements NestInterceptor {
             topStatusCodes: this.getTopStatusCodes(
                 this.globalMetrics.statusCodes,
             ),
+            system: {
+                memoryHeapUsedMB: (
+                    this.systemMetrics.memory.heapUsed /
+                    1024 /
+                    1024
+                ).toFixed(2),
+                memoryHeapPercent:
+                    this.systemMetrics.memory.heapUsedPercent.toFixed(2),
+                cpuPercent: this.systemMetrics.cpu.percentUsed.toFixed(2),
+                eventLoopLagMs: this.systemMetrics.eventLoop.lagMs.toFixed(2),
+                uptimeSeconds: Math.floor(this.systemMetrics.uptime),
+            },
         });
     }
 
@@ -195,13 +345,25 @@ export class MetricsInterceptor implements NestInterceptor {
     }
 
     /**
-     * Gets current metrics for all endpoints
+     * Gets current metrics for all endpoints including system metrics
      */
-    getMetrics(): { global: RequestMetrics; endpoints: EndpointMetrics } {
+    getMetrics(): {
+        global: RequestMetrics;
+        endpoints: EndpointMetrics;
+        system: SystemMetrics;
+    } {
         return {
             global: { ...this.globalMetrics },
             endpoints: { ...this.metrics },
+            system: { ...this.systemMetrics },
         };
+    }
+
+    /**
+     * Gets current system metrics (memory, CPU, event loop lag)
+     */
+    getSystemMetrics(): SystemMetrics {
+        return { ...this.systemMetrics };
     }
 
     /**
@@ -230,7 +392,7 @@ export class MetricsInterceptor implements NestInterceptor {
     }
 
     /**
-     * Gets health check based on metrics
+     * Gets health check based on metrics including system resource usage
      */
     getHealthStatus(): {
         status: 'healthy' | 'degraded' | 'unhealthy';
@@ -239,14 +401,23 @@ export class MetricsInterceptor implements NestInterceptor {
             averageResponseTime: number;
             totalRequests: number;
         };
+        system: {
+            memoryHeapPercent: number;
+            cpuPercent: number;
+            eventLoopLagMs: number;
+        };
     } {
         const errorRate =
-            (this.globalMetrics.errorCount / this.globalMetrics.count) * 100;
+            this.globalMetrics.count > 0
+                ? (this.globalMetrics.errorCount / this.globalMetrics.count) *
+                  100
+                : 0;
         const avgResponseTime = this.globalMetrics.averageDuration;
 
         let status: 'healthy' | 'degraded' | 'unhealthy' =
             HEALTH_STATUS.HEALTHY;
 
+        // Check request metrics
         if (
             errorRate > PERFORMANCE.UNHEALTHY_ERROR_RATE ||
             avgResponseTime > PERFORMANCE.SLOW_REQUEST_THRESHOLD
@@ -259,12 +430,40 @@ export class MetricsInterceptor implements NestInterceptor {
             status = HEALTH_STATUS.DEGRADED;
         }
 
+        // Check system metrics for degradation
+        const memPercent = this.systemMetrics.memory.heapUsedPercent;
+        const cpuPercent = this.systemMetrics.cpu.percentUsed;
+        const eventLoopLag = this.systemMetrics.eventLoop.lagMs;
+
+        // Check unhealthy thresholds
+        if (
+            memPercent > PERFORMANCE.UNHEALTHY_MEMORY_PERCENT ||
+            cpuPercent > PERFORMANCE.UNHEALTHY_CPU_PERCENT ||
+            eventLoopLag > PERFORMANCE.UNHEALTHY_EVENT_LOOP_LAG_MS
+        ) {
+            status = HEALTH_STATUS.UNHEALTHY;
+        }
+        // Check degraded thresholds
+        else if (
+            status === HEALTH_STATUS.HEALTHY &&
+            (memPercent > PERFORMANCE.DEGRADED_MEMORY_PERCENT ||
+                cpuPercent > PERFORMANCE.DEGRADED_CPU_PERCENT ||
+                eventLoopLag > PERFORMANCE.DEGRADED_EVENT_LOOP_LAG_MS)
+        ) {
+            status = HEALTH_STATUS.DEGRADED;
+        }
+
         return {
             status,
             metrics: {
                 errorRate,
                 averageResponseTime: avgResponseTime,
                 totalRequests: this.globalMetrics.count,
+            },
+            system: {
+                memoryHeapPercent: memPercent,
+                cpuPercent: cpuPercent,
+                eventLoopLagMs: eventLoopLag,
             },
         };
     }

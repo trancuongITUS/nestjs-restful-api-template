@@ -36,7 +36,8 @@
       "Skill(problem-solving)",
       "Bash(npm install:*)",
       "Bash(timeout 10 npm run start:dev:*)",
-      "Bash(npx jest:*)"
+      "Bash(npx jest:*)",
+      "Bash(npm ls:*)"
     ],
     "deny": [
       "Bash(rm ~/)",

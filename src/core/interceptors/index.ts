@@ -14,9 +14,7 @@ export { ValidationInterceptor } from './validation.interceptor';
 // Performance & Reliability
 export { TimeoutInterceptor } from './timeout.interceptor';
 export { CachingInterceptor } from './caching.interceptor';
-export { RetryInterceptor } from './retry.interceptor';
 export { MetricsInterceptor } from './metrics.interceptor';
-export { CircuitBreakerInterceptor } from './circuit-breaker.interceptor';
 
 // Security & Rate Limiting
 // Rate limiting is handled by ThrottlerModule and ThrottlerGuard
@@ -48,8 +46,6 @@ export const InterceptorConfigs = {
         'LoggingInterceptor',
         'TransformInterceptor',
         'TimeoutInterceptor',
-        'RetryInterceptor',
-        'CircuitBreakerInterceptor',
         'MetricsInterceptor',
     ],
 
@@ -71,8 +67,6 @@ export const InterceptorConfigs = {
         'TransformInterceptor',
         'TimeoutInterceptor',
         'CachingInterceptor',
-        'RetryInterceptor',
-        'CircuitBreakerInterceptor',
         'MetricsInterceptor',
         'ValidationInterceptor',
     ],

@@ -3,15 +3,14 @@
  * Import all constants from a single location for better maintainability
  *
  * Note: Environment-dependent configuration values (ports, timeouts, rate limits, etc.)
- * are now managed by the ConfigService. These constants contain only static values
- * that don't change based on environment.
+ * are managed by the ConfigService. These constants contain only static values.
  *
  * Organized by domain:
  * - application: Environment types, compression settings
  * - error: Error codes and error-related constants
  * - http: HTTP status codes, methods, content types
  * - performance: Monitoring thresholds and metrics constants
- * - security: Circuit breaker, retry logic, sensitive data patterns
+ * - security: Sensitive data patterns, auth settings
  * - validation: Validation rules, limits, and regex patterns
  */
 
