@@ -8,26 +8,29 @@ import {
 import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Request } from 'express';
-import { PERFORMANCE, HTTP_METHOD, VALIDATION } from '../../common/constants';
-import { ConfigService } from '../../config';
+import { LRUCache } from 'lru-cache';
+import { HTTP_METHOD, VALIDATION } from '../../common/constants';
+import { ConfigService } from '../../config/config.service';
 
-interface CacheEntry {
-    data: unknown;
-    expiry: number;
-}
+/** Max cache entries to prevent unbounded memory growth */
+const MAX_CACHE_ENTRIES = 500;
 
 /**
- * Caching interceptor that caches GET requests for improved performance
- * Uses in-memory cache with TTL support
+ * Caching interceptor that caches GET requests for improved performance.
+ * Uses LRU (Least Recently Used) cache with bounded size and TTL support.
  */
 @Injectable()
 export class CachingInterceptor implements NestInterceptor {
     private readonly logger = new Logger(CachingInterceptor.name);
-    private readonly cache = new Map<string, CacheEntry>();
+    private readonly cache: LRUCache<string, object>;
     private readonly defaultTtl: number;
 
     constructor(private readonly configService: ConfigService) {
         this.defaultTtl = this.configService.performance.cacheTtl;
+        this.cache = new LRUCache<string, object>({
+            max: MAX_CACHE_ENTRIES,
+            ttl: this.defaultTtl,
+        });
     }
 
     intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
@@ -87,38 +90,23 @@ export class CachingInterceptor implements NestInterceptor {
     }
 
     /**
-     * Gets cached response if it exists and is not expired
+     * Gets cached response if it exists and is not expired.
+     * LRUCache automatically handles TTL expiration.
      */
     private getCachedResponse(cacheKey: string): unknown {
-        const cached = this.cache.get(cacheKey);
-
-        if (!cached) {
-            return null;
-        }
-
-        if (Date.now() > cached.expiry) {
-            this.cache.delete(cacheKey);
-            return null;
-        }
-
-        return cached.data;
+        return this.cache.get(cacheKey) ?? null;
     }
 
     /**
-     * Sets cached response with expiry time
+     * Sets cached response with TTL.
+     * LRUCache automatically handles LRU eviction when max size reached.
      */
     private setCachedResponse(
         cacheKey: string,
-        data: unknown,
+        data: object,
         ttl: number,
     ): void {
-        const expiry = Date.now() + ttl;
-        this.cache.set(cacheKey, { data, expiry });
-
-        // Clean up expired entries periodically
-        if (this.cache.size > PERFORMANCE.CACHE_CLEANUP_THRESHOLD) {
-            this.cleanupExpiredEntries();
-        }
+        this.cache.set(cacheKey, data, { ttl });
     }
 
     /**
@@ -152,27 +140,6 @@ export class CachingInterceptor implements NestInterceptor {
     }
 
     /**
-     * Cleans up expired cache entries
-     */
-    private cleanupExpiredEntries(): void {
-        const now = Date.now();
-        let cleanedCount = 0;
-
-        for (const [key, value] of this.cache.entries()) {
-            if (now > value.expiry) {
-                this.cache.delete(key);
-                cleanedCount++;
-            }
-        }
-
-        if (cleanedCount > 0) {
-            this.logger.debug(
-                `Cleaned up ${cleanedCount} expired cache entries`,
-            );
-        }
-    }
-
-    /**
      * Clears all cached entries
      */
     clearCache(): void {
@@ -186,7 +153,7 @@ export class CachingInterceptor implements NestInterceptor {
     getCacheStats(): { size: number; keys: string[] } {
         return {
             size: this.cache.size,
-            keys: Array.from(this.cache.keys()),
+            keys: [...this.cache.keys()],
         };
     }
 }
