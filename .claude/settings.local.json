@@ -33,7 +33,10 @@
       "Bash(.claudeskills.venvScriptspython.exe .claude/scripts/generate_catalogs.py --skills)",
       "Bash(\".claude\\\\skills\\\\.venv\\\\Scripts\\\\python.exe\" .claude/scripts/generate_catalogs.py --skills)",
       "Skill(debugging)",
-      "Skill(problem-solving)"
+      "Skill(problem-solving)",
+      "Bash(npm install:*)",
+      "Bash(timeout 10 npm run start:dev:*)",
+      "Bash(npx jest:*)"
     ],
     "deny": [
       "Bash(rm ~/)",

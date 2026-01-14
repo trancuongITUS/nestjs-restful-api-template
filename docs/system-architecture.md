@@ -567,6 +567,36 @@ Layer 7: Data Protection
 
 ---
 
+## Scheduled Tasks
+
+The application uses `@nestjs/schedule` for background job scheduling.
+
+### Architecture
+- **TasksModule**: Centralized task registry in `src/tasks/`
+- **Cron-based**: Uses cron expressions for scheduling
+- **Configurable**: Environment variables control behavior
+
+### Current Tasks
+
+| Task | Schedule | Purpose |
+|------|----------|---------|
+| AuditRetentionTask | Weekly (Sunday midnight) | Delete audit logs older than retention period |
+
+### Adding New Tasks
+1. Create `{name}.task.ts` in `src/tasks/`
+2. Use `@Cron()` decorator with expression from `cron-expressions.ts`
+3. Inject required services
+4. Export from `src/tasks/index.ts`
+
+### Configuration
+```env
+AUDIT_RETENTION_ENABLED=true   # Enable/disable task
+AUDIT_RETENTION_DAYS=90        # Retention period
+AUDIT_RETENTION_CRON="0 0 * * 0"  # Cron expression
+```
+
+---
+
 ## Scalability Patterns
 
 ### Horizontal Scaling
