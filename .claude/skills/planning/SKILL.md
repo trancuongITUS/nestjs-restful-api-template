@@ -1,6 +1,6 @@
 ---
 name: planning
-description: Use when you need to plan technical solutions that are scalable, secure, and maintainable.
+description: Plan implementations, design architectures, create technical roadmaps with detailed phases. Use for feature planning, system design, solution architecture, implementation strategy, phase documentation.
 license: MIT
 ---
 
@@ -57,6 +57,14 @@ Load: `references/output-standards.md`
 - Include code snippets/pseudocode when clarifying
 - Provide multiple options with trade-offs when appropriate
 - Fully respect the `./docs/development-rules.md` file.
+
+## Task Integration (Optional)
+
+When session has `CLAUDE_CODE_TASK_LIST_ID` set (active plan):
+- Use TaskCreate to create tasks for each phase with clear subjects
+- Set dependencies: Phase N+1 `blockedBy` Phase N
+- Subagents coordinate via shared task list automatically
+- Use TaskUpdate to mark progress (in_progress → completed)
 
 ### Important
 DO NOT create plans or reports in USER directory.

@@ -54,6 +54,11 @@ const DEFAULT_CONFIG = {
     packageManager: 'auto',
     framework: 'auto'
   },
+  skills: {
+    research: {
+      useGemini: true  // Toggle Gemini CLI usage in research skill
+    }
+  },
   assertions: []
 };
 
@@ -487,6 +492,8 @@ function loadConfig(options = {}) {
     // -1 = disabled (no injection, saves tokens)
     // 0-5 = inject corresponding level guidelines
     result.codingLevel = merged.codingLevel ?? -1;
+    // Skills configuration
+    result.skills = merged.skills || DEFAULT_CONFIG.skills;
 
     return sanitizeConfig(result, projectRoot);
   } catch (e) {
@@ -502,7 +509,8 @@ function getDefaultConfig(includeProject = true, includeAssertions = true, inclu
     plan: { ...DEFAULT_CONFIG.plan },
     paths: { ...DEFAULT_CONFIG.paths },
     docs: { ...DEFAULT_CONFIG.docs },
-    codingLevel: -1  // Default: disabled (no injection, saves tokens)
+    codingLevel: -1,  // Default: disabled (no injection, saves tokens)
+    skills: { ...DEFAULT_CONFIG.skills }
   };
   if (includeLocale) {
     result.locale = { ...DEFAULT_CONFIG.locale };
@@ -728,6 +736,22 @@ function getGitRoot(cwd = null) {
   return execSafe('git rev-parse --show-toplevel', { cwd: cwd || undefined });
 }
 
+/**
+ * Extract task list ID from plan resolution for Claude Code Tasks coordination
+ * Only returns ID for session-resolved plans (explicitly active, not branch-suggested)
+ *
+ * Cross-platform: path.basename() handles both Unix/Windows separators
+ *
+ * @param {{ path: string|null, resolvedBy: 'session'|'branch'|null }} resolved - Plan resolution result
+ * @returns {string|null} Task list ID (plan directory name) or null
+ */
+function extractTaskListId(resolved) {
+  if (!resolved || resolved.resolvedBy !== 'session' || !resolved.path) {
+    return null;
+  }
+  return path.basename(resolved.path);
+}
+
 module.exports = {
   CONFIG_PATH,
   LOCAL_CONFIG_PATH,
@@ -757,5 +781,6 @@ module.exports = {
   validateNamingPattern,
   resolveNamingPattern,
   getGitBranch,
-  getGitRoot
+  getGitRoot,
+  extractTaskListId
 };
