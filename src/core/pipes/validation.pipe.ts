@@ -19,6 +19,7 @@ export class ValidationPipe implements PipeTransform<unknown, unknown> {
         value: unknown,
         { metatype }: ArgumentMetadata,
     ): Promise<unknown> {
+
         if (!metatype || !this.toValidate(metatype)) {
             return value;
         }
@@ -39,6 +40,7 @@ export class ValidationPipe implements PipeTransform<unknown, unknown> {
             throw new BadRequestException({
                 message: formatValidationErrors(errors),
                 error: ERROR_CODE.VALIDATION_FAILED,
+                errors: errors,
                 details:
                     'Request validation failed. Please check your input data.',
             });

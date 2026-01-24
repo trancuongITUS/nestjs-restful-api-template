@@ -52,28 +52,6 @@
           }
         ]
       }
-    ],
-    "PreCompact": [
-      {
-        "matcher": "manual|auto",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"%CLAUDE_PROJECT_DIR%\"/.claude/hooks/write-compact-marker.cjs"
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "matcher": "clear",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"%CLAUDE_PROJECT_DIR%\"/.claude/hooks/session-end.cjs"
-          }
-        ]
-      }
     ]
   }
 }
